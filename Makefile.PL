@@ -7,7 +7,7 @@ WriteMakefile(
     #'DIR'               => ['Perl'],
     'PREREQ_PM'		=>
     	{
-	Term::Size::Any        => 0.01,
+	Term::Size::Any        => 0.001,
 	Spreadsheet::ConvertAA => 0.02,
         Data::TreeDumper       => 0.12,
         Data::Table => 1.50,
