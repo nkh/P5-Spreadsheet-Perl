@@ -7,7 +7,7 @@ installdirs:  site
 requires:
     Data::TreeDumper:              0.12
     Spreadsheet::ConvertAA:        0.02
-    Term::Size:                    0.2
+    Term::Size::Any:               0.01
     Text::ASCIITable:              0.12
 
 distribution_type: module
