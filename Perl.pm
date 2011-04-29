@@ -2153,7 +2153,7 @@ Note that B<Ref> accepts reference to scalars only.
 Simply delete the cell:
 
   delete ${A1} ;
-  
+
 =head2 Store on fetch
 
 You can direct Spreadsheet::Perl to call the 'store callback' of a cell everytime the cell is fetched. What is this good for?
@@ -2364,6 +2364,16 @@ Khemir Nadim ibn Hamouda. <nadim@khemir.net>
   
 If you find any value in this module or want to influence it's development, mail me!  All hints, tips, flames and wishes
 are welcome at <nadim@khemir.net>.
+
+=head1 SEE ALSO
+
+L<Spreadsheet::Engine>
+
+I, of course prefere my implementation that, IMHO, does much more; but L<Spreadsheet::Engine> provides a lot of functions like
+SQRT, TODAY, TRIM, ... Since L<Spreadsheet::Perl> allows you to use perl as a cell formula language, there is alittle need for that.
+
+If you need to load spreadsheet with "common format" formulas, L<Spreadsheet::Engine> may be a goog alternative. Stealing all those
+to add them to L<Spreadsheet::Perl> has crossed my mind and it's not much work. Either send me a patch or ask and I may add them.
 
 =head1 DEPENDENCIES
 
