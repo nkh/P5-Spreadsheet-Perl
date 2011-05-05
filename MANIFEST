@@ -14,6 +14,7 @@ Perl/Devel.pm
 Perl/Format.pm
 Perl/Formula.pm
 Perl/Function.pm
+Perl/InsertDelete.pm
 Perl/Html.pm
 Perl/Label.pm
 Perl/Lock.pm

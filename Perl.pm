@@ -32,6 +32,7 @@ use Spreadsheet::Perl::PerlFormula ;
 use Spreadsheet::Perl::Function ;
 use Spreadsheet::Perl::ASCIITable;
 use Spreadsheet::Perl::Html ;
+use Spreadsheet::Perl::InsertDelete ;
 use Spreadsheet::Perl::Lock ;
 use Spreadsheet::Perl::Label ;
 use Spreadsheet::Perl::QuerySet ;
@@ -752,6 +753,17 @@ for my $current_address ($self->GetAddressList($address))
 				}
 			else
 				{
+				# storing a simple value removes formulas
+
+				delete $current_cell->{FORMULA} ;
+				delete $current_cell->{PERL_FORMULA} ;
+				delete $current_cell->{FETCH_SUB} ;
+				delete $current_cell->{FETCH_SUB_ARGS} ;
+				delete $current_cell->{GENERATED_FORMULA} ;
+				delete $current_cell->{ANCHOR} ;
+
+				$current_cell->{NEED_UPDATE} = 0 ;
+
 				$current_cell->{VALUE} = $value_to_store ;
 				}
 				
