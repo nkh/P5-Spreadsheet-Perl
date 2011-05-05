@@ -416,6 +416,12 @@ if($is_cell)
 				}
 			}
 		}
+
+	if($self->{DEBUG}{FETCH_VALUE})
+		{
+		my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+		print $dh "\t value: $value\n" ;
+		}
 		
 	return($value) ;
 	}
@@ -429,6 +435,13 @@ else
 		{
 		push @values, $self->Get($current_address) ;
 		}
+
+	if($self->{DEBUG}{FETCH})
+		{
+		my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+		print $dh "END: Fetching range '$cell_or_range'\n" ;
+		}
+
 		
 	return \@values ;
 	}
@@ -2305,6 +2318,7 @@ The following flags exist:
   $ss->{DEBUG}{VALIDATOR}++ ; # display calls to all validators in spreadsheet
   
   $ss->{DEBUG}{FETCH}++ ; # shows when a cell value is fetched
+  $self->{DEBUG}{FETCH_VALUE}++ ; # shows which value is fetched
   $ss->{DEBUG}{STORE}++ ; # shows when a cell value is stored
   $ss->{DEBUG}{FETCH_TRIGGER}{'A1'}++ ; # displays a message when 'A1' is fetched
   $ss->{DEBUG}{FETCH_TRIGGER}{'A1'} = sub {my ($ss, $address) = @_} ; # calls the sub when 'A1' is fetched

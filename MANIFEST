@@ -25,7 +25,9 @@ Perl/Reference.pm
 Perl/UserData.pm
 Perl/Validator.pm
 
-examples/
+t/test_template
+t/0100_perl_formula.t
+
 examples/ref2.pl
 examples/ascii_table2.pl
 examples/create_setup.pl
