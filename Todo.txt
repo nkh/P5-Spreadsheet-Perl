@@ -9,8 +9,6 @@ default file format should be perl, writable too (dump streamer?)
 
 function definitions should be object specific, OK as class specific but a choice should exist
 
-range reading should be context specific. scalar => array ref. array => array
-
 debugging mode to show where the functions are called
 
 #!Use new ASCIITAble.

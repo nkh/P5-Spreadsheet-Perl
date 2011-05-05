@@ -8,7 +8,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-#~ use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 
@@ -19,7 +18,6 @@ our %EXPORT_TAGS =
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 
-#~ our @EXPORT = qw() ;
 our @EXPORT ;
 push @EXPORT, qw( DefineSpreadsheetFunction ) ;
 
@@ -81,7 +79,8 @@ if(exists $self->{OTHER_SPREADSHEETS}{$name})
 	{
 	if($self->{OTHER_SPREADSHEETS}{$name} != $reference)
 		{
-		print "AddSpreadsheet: Replacing spreadsheet '$name'\n" ;
+		my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+		print $dh "AddSpreadsheet: Replacing spreadsheet '$name'\n" ;
 		}
 	}
 	

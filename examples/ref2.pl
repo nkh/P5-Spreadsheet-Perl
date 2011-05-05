@@ -28,8 +28,11 @@
 	my $variable = 25 ;
 	my $variable_2 = 30 ;
 	my $struct = {result => 'hello world'} ;
-
+	
 	# make cells refer to perl scalars. Note that this is a two way relationship
+
+=pod
+	# we can set all the references in one call
 	$ss->Ref
 		(
 		'Ref and formulas',
@@ -37,6 +40,15 @@
 		'A2' => \$variable_2,
 		'A3' => \$struct->{result},
 		) ;
+
+	# or set each cell separately and be able to 
+	# set individual information. setting individual
+	# information allows us to extract the label names
+	# as shown in the example bellow
+=cut
+	$ss{'A1'} = Ref('$variable', \$variable) ;
+	$ss{'A2'} = Ref('$variable_2', \$variable_2) ;
+	$ss{'A3'} = Ref('$struct->{result}', \$struct->{result}) ;
 
 	# set formulas over the perl scalars. the initial value is fetched from the perl scalar, then 
 	# the formulas are applied. dependencies and cyclic dependencies are handled 
@@ -74,7 +86,15 @@
 		'$struct'=> $struct,
 		}, 'scalars:' ;
 		
-		
+	# label the spreadsheet
+	$ss->label_column('A'=> 'Value') ;
+
+	$ss->label_row(1 => $ss->get_reference_description('A1')) ;
+	$ss->label_row(2 => $ss->REF_INFO('A2')) ;
+	$ss->label_row(3 => $ss->REF_INFO('A3')) ;
+
+	print $ss->Dump() ;
+	print $ss->DumpTable() ;
 
 
 

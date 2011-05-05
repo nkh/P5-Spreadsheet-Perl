@@ -8,7 +8,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-#~ use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 
@@ -19,7 +18,6 @@ our %EXPORT_TAGS =
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 
-#~ our @EXPORT = qw( SPF ) ;
 our @EXPORT ;
 push @EXPORT, qw( PerlFormula PF ) ;
 
@@ -53,11 +51,10 @@ else
 
 *PF = \&PerlFormula ;
 
+#-------------------------------------------------------------------------------
+
 sub GeneratePerlFormulaSub
 {
-#~ use Data::Dumper ;
-#~ print Dumper(@_) ;
-
 my ($ss, $current_cell_address, $anchor, $formula) = @_ ;
 
 if($formula =~ /[A-Z]+\]?\[?[0-9]+/)
@@ -80,7 +77,8 @@ return
 		tie my (%ss), $ss ; 
 		
 		my $cell = shift ;
-		
+		my @formula_arguments = @_ ;
+
 		my $dh = $ss->{DEBUG}{ERROR_HANDLE} ;
 		my $ss_name = defined $ss->{NAME} ? "$ss->{NAME}!" : "$ss!" ;
 		

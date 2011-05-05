@@ -8,7 +8,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-#~ use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 
@@ -20,18 +19,27 @@ our %EXPORT_TAGS =
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 
 our @EXPORT ;
-push @EXPORT, qw() ;
+push @EXPORT, qw( ) ;
 
 our $VERSION = '0.01' ;
 
 #-------------------------------------------------------------------------------
 
-# possibility to have multiple dbi connections in the spreadsheet
+sub label_column
+{
+my ($self, $column, $label) = @_ ;
 
-# function to populate the ss only
+$self->Set("${column}0" => $label) ;
+}
 
-# function for  a 2 ways mapping => how and WHEN do we synch
+#-------------------------------------------------------------------------------
 
+sub label_row
+{
+my ($self, $row, $label) = @_ ;
+
+$self->Set('@'. $row => $label) ;
+}
 
 #-------------------------------------------------------------------------------
 
@@ -40,12 +48,7 @@ our $VERSION = '0.01' ;
 __END__
 =head1 NAME
 
-Spreadsheet::Perl::DBI - Database support for Spreadsheet::Perl
-
-=head1 SYNOPSIS
-
-  
-=head1 DESCRIPTION
+Spreadsheet::Perl::Label - Labeling columns and rows for Spreadsheet::Perl
 
 Part of Spreadsheet::Perl.
 
@@ -53,7 +56,7 @@ Part of Spreadsheet::Perl.
 
 Khemir Nadim ibn Hamouda. <nadim@khemir.net>
 
-  Copyright (c) 2004 Nadim Ibn Hamouda el Khemir. All rights
+  Copyright (c) 2011 Nadim Ibn Hamouda el Khemir. All rights
   reserved.  This program is free software; you can redis-
   tribute it and/or modify it under the same terms as Perl
   itself.

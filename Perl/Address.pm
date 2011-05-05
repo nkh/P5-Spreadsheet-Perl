@@ -8,7 +8,6 @@ use strict ;
 use warnings ;
 
 require Exporter ;
-#~ use AutoLoader qw(AUTOLOAD) ;
 
 our @ISA = qw(Exporter) ;
 
@@ -19,7 +18,6 @@ our %EXPORT_TAGS =
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 
-#~ our @EXPORT = qw( SetRangeName SetCellName SortCells) ;
 our @EXPORT ;
 push @EXPORT, qw( SortCells ConvertAdressToNumeric) ;
 
@@ -58,6 +56,7 @@ my $spreadsheet = '' ;
 
 if($address =~ /^([A-Z_]+!)(.+)/)
 	{
+	# reference to another spreadsheet
 	$spreadsheet = $1 ;
 	$address = $2 ;
 	}
@@ -203,8 +202,7 @@ while (my($name, $address) = each %name_address)
 	{
 	#~ print "setting name '$name' to '$address'\n" ;
 	
-	croak "Error: Only uppercase Letters allowed in address names. '$name'" if $name !~ /^[A-Z_]+$/ ; 
-	
+	$name = uc($name) ;
 	$self->{NAMED_ADDRESSES}{$name} = $self->CanonizeAddress($address) ;
 	}
 }
@@ -301,7 +299,6 @@ for my $address (@addresses_definition)
 		{
 		/([A-Z@]+)\*/ && do
 			{
-			#~ $end_cell= "${1}10" ;
 			$end_cell= "${1}1" ;
 			last;
 			} ;
@@ -309,14 +306,12 @@ for my $address (@addresses_definition)
 		/\*([0-9]+)/ && do
 			{
 			$end_cell = "A${1}" ;
-			#~ $end_cell = "BB${1}" ;
 			last;
 			} ;
 			
 		/^\*$/ && do
 			{
 			$end_cell = 'A1' ;
-			#~ $end_cell = 'BB10' ;
 			last;
 			} ;
 		}
@@ -365,8 +360,13 @@ for my $address (@addresses_definition)
 				push @addresses, $spreadsheet . ConvertNumericToAddress($x, $y) ;
 				}
 			}
-			
-		print "GetAddressList '$address': " . (join ' - ', @addresses) . "\n" if($self->{DEBUG}{ADDRESS_LIST});
+
+		if($self->{DEBUG}{ADDRESS_LIST})
+			{
+			my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+			print $dh "GetAddressList '$address': " 
+				. (join ' - ', @addresses) . "\n"
+			}
 		}
 	}
 	

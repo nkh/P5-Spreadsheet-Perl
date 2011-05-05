@@ -10,11 +10,7 @@ use Spreadsheet::ConvertAA ;
 
 #-------------------------------------------------------------------------------
 
-tie my %ss, "Spreadsheet::Perl", NAME => 'NAME' ;
-my $ss = tied %ss ;
-#~ $ss->{DEBUG}{ADDRESS_LIST}++ ;
-#~ $ss->{DEBUG}{STORE}++ ;
-#~ $ss->{DEBUG}{FETCH}++ ;
+my $ss = tie my %ss, "Spreadsheet::Perl", NAME => 'NAME' ;
 
 $ss->SetNames
 	(
@@ -23,7 +19,6 @@ $ss->SetNames
 	, B => 'A1:A2'
 	, C => 'NAME!B1'
 	, D => 'NAME!NADIM:B2'
-	#~ , D => 'NAME!B1:B2'
 	) ;
 		
 print $ss->Dump(undef , 1) ;
