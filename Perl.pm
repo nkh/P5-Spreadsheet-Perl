@@ -2317,9 +2317,11 @@ The following flags exist:
   $ss->{DEBUG}{FETCHED}++ ; # counts how many times the cell is fetched
   $ss->{DEBUG}{STORED}++ ; # counts how many times the cell is stored
   
-  $ss->{DEBUG}{PRINT_FORMULA}++ ; # show the generated formulas
-  $ss->{DEBUG}{INLINE_INFORMATION}++ ; #inline cell information in the table dump
+  $ss->{DEBUG}{PRINT_FORMULA}++ ; # show the info about formula generation
+  $ss->{DEBUG}{PRINT_ORIGINAL_FORMULA}++ ; # inline original formula in the table dump
+  $ss->{DEBUG}{INLINE_INFORMATION}++ ; # inline cell information in the table dump
   
+
   $ss->{DEBUG}{DEFINED_AT}++ ; # show where the cell has been defined
   $ss->{DEBUG}{ADDRESS_LIST}++ ; # shows the generated address lists
   $ss->{DEBUG}{FETCH_FROM_OTHER}++ ; # show when an inter spreadsheet value is fetched

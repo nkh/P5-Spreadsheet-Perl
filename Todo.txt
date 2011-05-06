@@ -1,7 +1,18 @@
 Spreadsheet::Perl
 =================
 
+PF should remember also add the line where it was used in the cell
+
+test function are_spreadsheet_values_equal
+
+cache the result of list context CanonizeAddress to speed up things
+
+code is not documented making the API difficult to grasp and use
+
+find a way to move the examples to tests
+
 function to show cell dependencies
+	can be used when moving cells
 
 verification at load time of the formulas could be optional
 

@@ -31,7 +31,7 @@ my ($self, $start_row, $number_of_rows_to_insert) = @_ ;
 
 confess "Invalid row '$start_row'\n" unless $start_row =~ /^\s*\d+\s*$/ ;
 
-my %cell_list ;
+my (%moved_cell_list, %not_moved_cell_list) ;
 
 for my $cell_address ($self->GetCellList())
 	{
@@ -40,22 +40,63 @@ for my $cell_address ($self->GetCellList())
 
 	if( $row >= $start_row)
 		{
-		push @{$cell_list{$row}}, $cell_address ;
+		push @{$moved_cell_list{$row}}, $cell_address ;
+		}
+	else
+		{
+		push @{$not_moved_cell_list{$row}}, $cell_address ;
 		}
 	}
 
-for my $row (reverse sort keys %cell_list)
+for my $row (reverse sort keys %moved_cell_list)
 	{
-	for my $cell_address (@{$cell_list{$row}})
+	for my $cell_address (@{$moved_cell_list{$row}})
 		{
-		#print "$cell_address\n" ;
 		my $new_address = $self->OffsetAddress($cell_address, 0, $number_of_rows_to_insert) ; 
 		
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert) ;
+			}
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
 		delete $self->{CELLS}{$cell_address} ;
 		}
 	}
+
+# note, the cells don't have to be update in a specific order
+# we keep the same order as moved cells tocreat the illusion
+# of order
+for my $row (reverse sort keys %not_moved_cell_list)
+	{
+	for my $cell_address (@{$not_moved_cell_list{$row}})
+		{
+		$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAAAAA9999") ;
+
+		# todo: update all formulas that depend on this cell
+		# $not_moved_cell_list only since the moved cells formulas
+		# are already offset
+		}
+	}
 }
+
+sub OffsetFormula
+{
+my 
+	(
+	$self, $cell_address,
+	$start_column, $columns_to_insert,
+	$start_row, $rows_to_insert,
+	$range
+	)  = @_ ;
+
+return unless exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ;
+
+my $formula = $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ; 
+$formula =~ s/(\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$self->OffsetAddress($1, $columns_to_insert, $rows_to_insert, $range)/eg ;
+
+$self->Set($cell_address, PF($formula)) ;
+}
+
 
 #-------------------------------------------------------------------------------
 

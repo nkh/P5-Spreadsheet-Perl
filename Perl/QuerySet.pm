@@ -280,7 +280,11 @@ if($is_cell)
 		{
 		my $cell_info = '' ;
 		
-		# cache ?
+		if(exists $self->{CELLS}{$address}{CACHE})
+			{
+			$cell_info .= "CACHE: '$self->{CELLS}{$address}{CACHE}'\n" ;
+			}
+
 		# lock ?
 		
 		if(exists $self->{CELLS}{$address}{STORE_SUB_INFO})
@@ -290,18 +294,18 @@ if($is_cell)
 			
 		if(exists $self->{CELLS}{$address}{FORMULA})
 			{
-			# defintion line?
+			# definition line?
 			
-			$cell_info .= $self->{CELLS}{$address}{FORMULA}[1] . " =>\n" 
-					. $self->{CELLS}{$address}{GENERATED_FORMULA}  . "\n" ;
+			$cell_info .= $self->{CELLS}{$address}{FORMULA}[1] . " =>\n" if $self->{DEBUG}{PRINT_ORIGINAL_FORMULA} ;
+			$cell_info .= $self->{CELLS}{$address}{GENERATED_FORMULA}  . "\n" ;
 			}
 			
 		if(exists $self->{CELLS}{$address}{PERL_FORMULA})
 			{
-			# defintion line?
+			# definition line?
 			
-			$cell_info .= $self->{CELLS}{$address}{PERL_FORMULA}[1] . " =>\n" 
-					. $self->{CELLS}{$address}{GENERATED_FORMULA}  . "\n" ;
+			$cell_info .= $self->{CELLS}{$address}{PERL_FORMULA}[1] . " =>\n" if $self->{DEBUG}{PRINT_ORIGINAL_FORMULA} ;
+			$cell_info .= $self->{CELLS}{$address}{GENERATED_FORMULA}  . "\n" ;
 			}
 			
 		if(exists $self->{CELLS}{$address}{FETCH_SUB_INFO})
