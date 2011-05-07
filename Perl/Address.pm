@@ -455,6 +455,9 @@ sub OffsetAddress
 
 my ($self, $address, $column_offset, $row_offset, $range) = @_ ;
 
+my $range_print = $range || 'none' ;
+#print "OffsetAddress: $address + $column_offset, $row_offset [$range_print] " ;
+
 my ($spreadsheet, $is_cell, $start_cell, $end_cell) = ('') ;
 
 if($address =~ /^([A-Z_]+!)(.+)/)
@@ -484,6 +487,8 @@ else
 		}
 	}
 
+my $offset_address ;
+
 if($is_cell)
 	{
 	if
@@ -492,16 +497,16 @@ if($is_cell)
 		|| $self->is_within_range($start_cell, $range)
 		)
 		{
-		return	$self->OffsetCellAddress
-				(
-				$spreadsheet . $start_cell,
-				$column_offset,
-				$row_offset
-				) ;
+		$offset_address = $self->OffsetCellAddress
+					(
+					$spreadsheet . $start_cell,
+					$column_offset,
+					$row_offset
+					) ;
 		}
 	else
 		{
-		return "$spreadsheet$start_cell" ;
+		$offset_address = "$spreadsheet$start_cell" ;
 		}
 	}
 else
@@ -529,13 +534,14 @@ else
 
 	if(defined $lhs && defined $rhs)
 		{
-		return("$spreadsheet$lhs:$rhs") ;
+		$offset_address = ("$spreadsheet$lhs:$rhs") ;
 		}
-	else
-		{
-		return ;
-		}
+	#else
+		# reurn undef
 	}
+
+#print " => $offset_address\n" ;
+return $offset_address ;
 }
 
 #-------------------------------------------------------------------------------

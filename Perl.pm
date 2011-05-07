@@ -1021,6 +1021,8 @@ Spreadsheet::Perl functionality:
 
 =item * Automatic formula offsetting
 
+=item * Insertion of rows and columns (no deletion yet)
+
 =item * Relative and fixed cell addresses
 
 =item * slice access
@@ -1578,6 +1580,8 @@ B<Please contribute your functions to Spreadsheet::Perl>.
 
 =item * GetCellsToUpdate, returns the list of the cells needing update
 
+=back
+
 =head1 SETTING AND READING CELLS
 
 Cells have one value and attributes. Cells values are perl scalars, anything you can assign to a perl scalar can be assigned
@@ -1689,8 +1693,6 @@ The following variables are available in the formula:
 =item * $cell, the address of the cell for which the formula is evaluated
 
 =item * @formula_arguments, extra user data passed to PF() in cell mode
-
-=back
 
 =back
 
@@ -2374,8 +2376,6 @@ Here are some of the things that I find missing, this doesn't mean all are good 
 
 =item * Arithmetic functions (only Sum is implemented), statistic functions
 
-=item * example of interface to the Inline module so you can write real fast functions in C
-
 =item * printing, exporting
 
 =item * importing from other spreadsheets
@@ -2386,15 +2386,13 @@ Here are some of the things that I find missing, this doesn't mean all are good 
 
 =over 4
 
-=item * Insertion of rows and columns
-
 =item * Deletion of rows and columns
 
 =item * Sorting
 
 =back
 
-=item * a GUI (curses, tk, wxWindows, cgi, Prima) would be great!
+=item * a complete GUI (Prima example exists)
 
 =item * a nice logo :-)
 

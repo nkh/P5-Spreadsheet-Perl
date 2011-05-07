@@ -36,7 +36,7 @@ my (%moved_cell_list, %not_moved_cell_list) ;
 for my $cell_address ($self->GetCellList())
 	{
 	# get all the cells for the rows under the $start_row
-	my ($column, $row) = $cell_address =~ /([A-Z_]+)(\d+)/ ;
+	my ($column, $row) = $cell_address =~ /([A-Z]+)(\d+)/ ;
 
 	if( $row >= $start_row)
 		{
@@ -56,7 +56,7 @@ for my $row (reverse sort keys %moved_cell_list)
 		
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
-			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert) ;
+			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
 			}
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
 		delete $self->{CELLS}{$cell_address} ;
@@ -64,20 +64,100 @@ for my $row (reverse sort keys %moved_cell_list)
 	}
 
 # note, the cells don't have to be update in a specific order
-# we keep the same order as moved cells tocreat the illusion
+# we keep the same order as moved cells to create the illusion
 # of order
 for my $row (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{
-		$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAAAAA9999") ;
+		$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+		}
+	}
 
-		# todo: update all formulas that depend on this cell
-		# $not_moved_cell_list only since the moved cells formulas
-		# are already offset
+for my $row_header (reverse sort grep {/^@/} $self->GetCellHeaderList())
+	{
+	my ($row_index) = $row_header =~ /^@(.+)/ ;
+	if($row_index >= $start_row)
+		{
+		my $new_row = $row_index + $number_of_rows_to_insert ;
+		$self->{CELLS}{"\@$new_row"} = $self->{CELLS}{$row_header} ;
+		delete $self->{CELLS}{$row_header} ;	
 		}
 	}
 }
+
+sub InsertColumns
+{
+my ($self, $start_column, $number_of_columns_to_insert) = @_ ;
+
+confess "Invalid w '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
+
+my (%moved_cell_list, %not_moved_cell_list) ;
+
+for my $cell_address ($self->GetCellList())
+	{
+	# get all the cells for the rows under the $start_row
+	my ($column, $row) = $cell_address =~ /([A-Z]+)(\d+)/ ;
+
+	my $column_index = FromAA($column) ;
+	my $start_column_index = FromAA($start_column) ;
+
+	if( $column_index >= $start_column_index)
+		{
+		push @{$moved_cell_list{$column}}, $cell_address ;
+		}
+	else
+		{
+		push @{$not_moved_cell_list{$column}}, $cell_address ;
+		}
+	}
+
+for my $column (reverse sort keys %moved_cell_list)
+	{
+	for my $cell_address (@{$moved_cell_list{$column}})
+		{
+		my $new_address = $self->OffsetAddress($cell_address, $number_of_columns_to_insert, 0) ; 
+		
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:${start_column}9999") ;
+			}
+		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
+		delete $self->{CELLS}{$cell_address} ;
+		}
+	}
+
+# note, the cells don't have to be update in a specific order
+# we keep the same order as moved cells to create the illusion
+# of order
+for my $column (reverse sort keys %not_moved_cell_list)
+	{
+	for my $cell_address (@{$not_moved_cell_list{$column}})
+		{
+		$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:${start_column}9999") ;
+		}
+	}
+
+#Todo: check that AA A BB sort properly
+
+my $start_column_index = FromAA($start_column) ;
+
+for my $column_header (reverse sort grep {/^[A-Z]+0$/} $self->GetCellHeaderList())
+	{
+	my ($column_index) = $column_header =~ /^([A-Z]+)0$/ ;
+	$column_index = FromAA($column_index) ;
+
+	if($column_index >= $start_column_index)
+		{
+		my $new_column = $column_index + $number_of_columns_to_insert ;
+		$new_column = ToAA($new_column) ;
+
+		$self->{CELLS}{"${new_column}0"} = $self->{CELLS}{$column_header} ;
+		delete $self->{CELLS}{$column_header} ;	
+		}
+	}
+}
+
 
 sub OffsetFormula
 {
@@ -103,27 +183,12 @@ $self->Set($cell_address, PF($formula)) ;
 1 ;
 
 __END__
+
 =head1 NAME
 
-Spreadsheet::Perl::QuerySet - Functions at the spreadsheet level
+Spreadsheet::Perl::InsertDelete - Columns and rows insertion and deletion
 
 =head1 SYNOPSIS
-
-  SetAutocalc
-  GetAutocalc
-  Recalculate
-  
-  SetName
-  GetName
-  AddSpreadsheet
-  
-  GetCellList
-  GetLastIndexes
-  GetCellsToUpdate
-  
-  DefineFunction
-  
-=head1 DESCRIPTION
 
 Part of Spreadsheet::Perl.
 
@@ -131,7 +196,7 @@ Part of Spreadsheet::Perl.
 
 Khemir Nadim ibn Hamouda. <nadim@khemir.net>
 
-  Copyright (c) 2004 Nadim Ibn Hamouda el Khemir. All rights
+  Copyright (c) 2011 Nadim Ibn Hamouda el Khemir. All rights
   reserved.  This program is free software; you can redis-
   tribute it and/or modify it under the same terms as Perl
   itself.

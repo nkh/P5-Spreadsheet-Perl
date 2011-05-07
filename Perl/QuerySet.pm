@@ -137,9 +137,22 @@ return
 		(
 		grep
 			{
-			! /^@/ && ! /[A-Z]0$/
+			! /^@/ && ! /^[A-Z]+0$/
 			} keys %{$self->{CELLS}}
 		)
+	) ;
+}
+
+sub GetCellHeaderList
+{
+my ($self) = @_ ;
+
+return
+	(
+	grep
+		{
+		/^@/ || /^[A-Z]+0$/
+		} keys %{$self->{CELLS}}
 	) ;
 }
 
@@ -317,7 +330,7 @@ if($is_cell)
 		}
 	else
 		{
-		return("Virtual cell\n") ;
+		return("#VC\n") ;
 		}
 	}
 else

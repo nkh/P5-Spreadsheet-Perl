@@ -65,7 +65,10 @@ if($formula =~ /[A-Z]+\]?\[?[0-9]+/)
 	my ($column, $row) = $anchor =~ /^([A-Z]+)([0-9]+)/ ;
 	my ($column_offset, $row_offset) = $ss->GetCellsOffset("$column$row", $current_cell_address) ;
 	
-	$formula =~ s/(\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$ss->OffsetAddress($1, $column_offset, $row_offset)/eg ;
+	if($column_offset || $row_offset)
+		{
+		$formula =~ s/(\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$ss->OffsetAddress($1, $column_offset, $row_offset)/eg ;
+		}
 	print $dh "=> $formula\n" if $ss->{DEBUG}{PRINT_FORMULA} ;
 	}
 
