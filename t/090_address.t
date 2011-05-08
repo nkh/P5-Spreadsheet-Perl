@@ -11,21 +11,30 @@ use Test::More 'no_plan';
 use Test::Block qw($Plan);
 
 use Spreadsheet::Perl ; 
-use Spreadsheet::Perl::Arithmetic ; 
 
 {
-local $Plan = {'load formula' => 1} ;
+local $Plan = {'offset address' => 10} ;
 
-my $ss = tie my %ss, "Spreadsheet::Perl" =>
-		CELLS =>
-			{
-			A5 => { PERL_FORMULA => [undef, '$ss->Sum("A1:A4")']} ,
-			} ;
+my $ss = tie my %ss, "Spreadsheet::Perl" ;
 
-$ss->{DEBUG}{INLINE_INFORMATION}++ ;
-
-$ss{'A1:A4'} = RangeValues(1 .. 8) ;
-is($ss{A5}, 10, 'load formula') or diag $ss->DumpTable() ; 
+for
+	(
+	  ['A1', 1, 1, 'B2']
+	, ['Z9', 1, 0, 'AA9']
+	, ['Z9', 1, 1, 'AA10']
+	, ['ZZ1', 1, 1, 'AAA2']
+	, ['AAA1', -1, 0, 'ZZ1']
+	, ['ABC5', 25, 3, 'ACB8']
+	, ['Z1', -25, 0, 'A1']
+	, ['Z1', -26, 0, undef]
+	, ['AA2', -26, -1, 'A1']
+	, ['AA2', -26, -2, undef]
+	)
+	{
+	my ($address, $column_offset, $row_offset, $expected_result) = @$_ ;
+	my $offset_cell = $ss->OffsetAddress($address, $column_offset, $row_offset) ;
+	is($offset_cell, $expected_result,'offsetting cell') ;
+	}
 }
 
 =comment

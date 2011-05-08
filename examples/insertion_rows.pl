@@ -34,6 +34,7 @@ $ss->InsertRows(3, 2) ;
 print $ss->DumpTable() ;
 
 $ss->InsertColumns('B', 2) ;
+$ss{B1} = PF('$ss{B5} + $ss{A2}') ;
 print $ss->DumpTable() ;
 
 #print $ss->Dump() ;

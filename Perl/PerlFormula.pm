@@ -69,6 +69,13 @@ if($formula =~ /[A-Z]+\]?\[?[0-9]+/)
 		{
 		$formula =~ s/(\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$ss->OffsetAddress($1, $column_offset, $row_offset)/eg ;
 		}
+	else
+		{
+		# remove fixed cell address that is normally handled
+		# by OffsetAddress
+		$formula =~ s/\[?([A-Z]+)\]?\[?([0-9]+)\]?/$1$2/g ;
+		}
+
 	print $dh "=> $formula\n" if $ss->{DEBUG}{PRINT_FORMULA} ;
 	}
 
