@@ -21,7 +21,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT ;
 push @EXPORT, qw( Reset ) ;
 
-our $VERSION = '0.11' ;
+our $VERSION = '0.12' ;
 
 use Spreadsheet::Perl::Address ;
 use Spreadsheet::Perl::Cache ;
@@ -52,14 +52,17 @@ return
 	, CACHE               => 1
 	, AUTOCALC            => 0
 	, OTHER_SPREADSHEETS  => {}
-	, DEBUG               => { ERROR_HANDLE => \*STDERR }
+	, DEBUG               => {
+								ERROR_HANDLE => \*STDERR,
+								PRINT_FORMULA_ERROR => 1,
+							}
 	
 	, VALIDATORS          => [['Spreadsheet lock validator', \&LockValidator]]
 	, ERROR_HANDLER       => undef # user registred sub
 	, MESSAGE             => 
 				{
-				ERROR => '#error'
-				, NEED_UPDATE => "#need update"
+				ERROR => '#ERROR'
+				, NEED_UPDATE => "#NEED UPDATE"
 				}
 				
 	, DEPENDENT_STACK     => []
@@ -221,7 +224,7 @@ if($is_cell)
 				$current_cell->{FETCHED}++ ;
 				}
 				
-			# circular deoendency checking
+			# circular dependency checking
 			my $caller ;
 			
 			if(exists $current_cell->{CYCLIC_FLAG})
@@ -250,8 +253,18 @@ if($is_cell)
 				}
 				
 			# formula directly set into cells must get "compiled"
+			# IE, when data is directly loaded from external file
 			if(exists $current_cell->{PERL_FORMULA} && ! exists $current_cell->{FETCH_SUB})
 				{
+				die "case to be handled!\n" ;
+
+=pod
+				# I don't remember when this can happen
+				# maybe when cells are read directly
+				# from a file. I tested with examples/read_write.pl but it didn't seem to use this code path
+				#
+				# I keep the code that was previously hadnling this case here till I can find a use case
+
 				my $formula = $current_cell->{PERL_FORMULA} ;
 				
 				$current_cell->{NEED_UPDATE} = 1 ;
@@ -263,11 +276,17 @@ if($is_cell)
 															, $formula->[1]
 															, (@$formula)[2 .. (@$formula - 1)]
 															) ;
+
+=cut
+
 				}
 			else
 				{
 				if(exists $current_cell->{FORMULA} && ! exists $current_cell->{FETCH_SUB})
 					{
+					die "case to be handled!\n" ;
+
+=pod
 					my $formula = $current_cell->{FORMULA} ;
 					
 					$current_cell->{NEED_UPDATE} = 1 ;
@@ -279,6 +298,8 @@ if($is_cell)
 															, $formula->[1]
 															, (@$formula)[2 .. (@$formula - 1)]
 															) ;
+
+=cut
 					}
 				}
 				
@@ -490,11 +511,6 @@ if(exists $self->{DEPENDENT_STACK} && @{$self->{DEPENDENT_STACK}})
 		{
 		$current_cell->{DEPENDENT}{$dependent_name}{DEPENDENT_DATA} = $dependent ;
 		$current_cell->{DEPENDENT}{$dependent_name}{COUNT}++ ;
-		
-		#~ $current_cell->{DEPENDENT}{$dependent_name}{FORMULA} = $spreadsheet->{CELLS}{$cell_name}{GENERATED_FORMULA} ;
-		# above can be computed on the fly when debugging
-		# this paragraph should be deleted when version 0.10 is reached
-		
 		}
 	else
 		{
@@ -591,8 +607,6 @@ for my $current_address ($self->GetAddressList($address))
 	
 	unless(defined $value && ref $value =~ /^Spreadsheet::Perl/)
 		{
-		#~ my @row_validators ;
-		#~ my @column_validators ;
 		my $cell_validators = $current_cell->{VALIDATORS} if(exists $current_cell->{VALIDATORS}) ;
 		
 		for my $validator_data (@{$self->{VALIDATORS}}, @$cell_validators)
@@ -870,7 +884,8 @@ sub CLEAR
 my $self    = shift ;
 my $address = shift ;
 
-delete $self->{CELLS} ; # must call all set functions! and delete? functions?
+delete $self->{CELLS} ; 
+# Todo: must call all set functions! and delete? functions?
 }
 
 sub EXISTS   
@@ -1039,7 +1054,7 @@ Look at the 'examples' directory for some examples.
 
 =head2 Why
 
-I found no spreadsheet modules on CPAN (I see a spreadsheet as a programming tool).
+I found no spreadsheet modules on CPAN.
 
 I you have an application that takes some input and does calculation on them, chances
 are that implementing it through a spreadsheet will make it more maintainable and easier to develop.
@@ -1066,18 +1081,6 @@ visual programming but still fit spreadsheets as they are often GUI based)
 
 =back
 
-For a more technical insight check:
-
-L<http://www.cs.uno.edu/~markus/02_Courses/past/csci6990/6990.03_Spreadsheet.ppt.pdf>
-
-The Spreadsheet FAQ might be of use:
-
-L<http://www.faqs.org/faqs/spreadsheets/faq/>
-
-and an interresting curiosa:
-
-L<http://www.uq.net.au/detective/>
-
 =head2 How
 
 I want B<Spreadsheets::Perl> to:
@@ -1102,8 +1105,7 @@ spreadsheet functions are accessed through the tied object.
 =head2 Simple creation
 
   use Spreadsheet::Perl ;
-  tie my %ss, "Spreadsheet::Perl" ; 
-  my $ss = tied %ss ; # needed to access the spreadsheet functions.
+  my $ss = tie my %ss, "Spreadsheet::Perl" ; 
 
 =head2 Setting up data
 
@@ -1645,7 +1647,7 @@ generate:
   
   At cell 'TEST!A6' formula: $ss->Get("A1") defined at 'main cyclic_error.pl 19':
   	Found cyclic dependencies! at /usr/local/lib/perl5/site_perl/5.8.0/Spreadsheet/Perl.pm line 242.
-  #error
+  #ERROR
 
 =head3 setting a formula
 
@@ -2320,8 +2322,9 @@ The following flags exist:
   $ss->{DEBUG}{STORED}++ ; # counts how many times the cell is stored
   
   $ss->{DEBUG}{PRINT_FORMULA}++ ; # show the info about formula generation
-  $ss->{DEBUG}{PRINT_ORIGINAL_FORMULA}++ ; # inline original formula in the table dump
   $ss->{DEBUG}{INLINE_INFORMATION}++ ; # inline cell information in the table dump
+  $ss->{DEBUG}{PRINT_ORIGINAL_FORMULA}++ ; # inline original formula in the table dump
+  $ss->{DEBUG}{PRINT_FORMULA_ERROR}++ ; # inline the error generated by the formula evaluation
   
 
   $ss->{DEBUG}{DEFINED_AT}++ ; # show where the cell has been defined
@@ -2417,7 +2420,7 @@ are welcome at <nadim@khemir.net>.
 L<Spreadsheet::Engine>
 
 I, of course prefere my implementation that, IMHO, does much more; but L<Spreadsheet::Engine> provides a lot of functions like
-SQRT, TODAY, TRIM, ... Since L<Spreadsheet::Perl> allows you to use perl as a cell formula language, there is alittle need for that.
+SQRT, TODAY, TRIM, ... Since L<Spreadsheet::Perl> allows you to use perl as a cell formula language, there is little need for that.
 
 If you need to load spreadsheet with "common format" formulas, L<Spreadsheet::Engine> may be a goog alternative. Stealing all those
 to add them to L<Spreadsheet::Perl> has crossed my mind and it's not much work. Either send me a patch or ask and I may add them.
