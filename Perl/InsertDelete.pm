@@ -180,6 +180,223 @@ $self->Set($cell_address, PF($formula)) ;
 
 #-------------------------------------------------------------------------------
 
+sub DeleteColumns
+{
+my ($self, $start_column, $number_of_columns_to_delete) = @_ ;
+
+confess "Invalid '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
+
+my $start_column_index = FromAA($start_column) ;
+my $end_column = ToAA($start_column_index + $number_of_columns_to_delete - 1) ;
+
+my (%removed_cell_list, %moved_cell_list, %not_moved_cell_list) ;
+
+for my $cell_address ($self->GetCellList())
+	{
+	# get all the cells for the rows under the $start_row
+	my ($column, $row) = $cell_address =~ /([A-Z]+)(\d+)/ ;
+
+	my $column_index = FromAA($column) ;
+	my $start_column_index = FromAA($start_column) ;
+	
+	if( $column_index >= $start_column_index)
+		{
+		if ($column_index < $start_column_index + $number_of_columns_to_delete)
+			{
+			push @{$removed_cell_list{$column}}, $cell_address ;
+			}
+		else
+			{
+			push @{$moved_cell_list{$column}}, $cell_address ;
+			}
+		}
+	else
+		{
+		push @{$not_moved_cell_list{$column}}, $cell_address ;
+		}
+	}
+
+for my $column (keys %removed_cell_list)
+	{
+	for my $cell_address (@{$removed_cell_list{$column}})
+		{
+		$self->DELETE($cell_address) ; # DELETE would call the appropriate callback
+		}
+	}
+
+for my $column (sort keys %moved_cell_list)
+	{
+	for my $cell_address (@{$moved_cell_list{$column}})
+		{
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			if($self->FormulaReferenceRange($cell_address, "${start_column}1:${end_column}9999")) 
+				{
+				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				}	
+			else
+				{
+				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+				}
+			}
+
+		my $new_address = $self->OffsetAddress($cell_address, - $number_of_columns_to_delete, 0) ;
+
+		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
+		delete $self->{CELLS}{$cell_address} ;
+		}
+	}
+
+# note, the cells don't have to be update in a specific order
+# we keep the same order as moved cells to create the illusion
+# of order
+for my $column (reverse sort keys %not_moved_cell_list)
+	{
+	for my $cell_address (@{$not_moved_cell_list{$column}})
+		{
+		# TODO GENERATED_FORMULA exists only after the cell has been 
+		# compiled. Is there a case where DeleteColumns could be called 
+		# before the formula generation?
+		
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			if($self->FormulaReferenceRange($cell_address, "${start_column}1:${end_column}9999")) 
+				{
+				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				}	
+			else
+				{
+				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+				}
+			}
+		}
+	}
+
+#Todo: check that AA A BB sort properly
+
+for my $column_header (sort grep {/^[A-Z]+0$/} $self->GetCellHeaderList())
+	{
+	my ($column_index) = $column_header =~ /^([A-Z]+)0$/ ;
+	$column_index = FromAA($column_index) ;
+
+	if($column_index >= $start_column_index)
+		{
+		if ($column_index < $start_column_index + $number_of_columns_to_delete)
+			{
+			$self->DELETE($column_header) ;	
+			}
+		else
+			{
+			my $new_column = $column_index - $number_of_columns_to_delete ;
+			$new_column = ToAA($new_column) ;
+
+			$self->{CELLS}{"${new_column}0"} = $self->{CELLS}{$column_header} ;
+			delete $self->{CELLS}{$column_header} ;	
+			}
+		}
+	}
+}
+
+sub FormulaReferenceRange
+{
+my ($self, $cell_address, $range) = @_ ;
+
+if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+	{
+	my ($rcs, $rrs, $rce, $rre) = $range =~/([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)/ ;
+
+	unless(defined $rcs && defined $rrs && defined $rce && defined $rre)
+		{
+		confess "Invalid range '$range'\n" ;
+		}
+	
+	($rcs, $rce) = (FromAA($rcs), FromAA($rce)) ;
+	if($rcs > $rce)
+		{
+		if($rrs > $rre)
+			{
+			($rcs, $rrs, $rce, $rre) = ($rce, $rre, $rcs, $rrs) ;
+			}
+		else
+			{
+			($rcs, $rce) = ($rce, $rcs) ;
+			}
+		}
+	else
+		{
+		if($rrs > $rre)
+			{
+			($rrs, $rre) = ($rre, $rrs) ;
+			}
+		#else 
+		#	range in right order
+		}
+
+
+	my $formula = $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ;
+	my ($fcs, $frs, $fce, $fre) ; 
+
+	while($formula =~ /((([A-Z]+)([0-9]+))(:([A-Z]+)([0-9]+))?)/g)
+		{
+		if(defined $5)
+			{
+			# range
+			($fcs, $frs, $fce, $fre) = ($3, $4, $6, $7) ;
+
+			($fcs, $fce) = (FromAA($fcs), FromAA($fce)) ;
+
+			if($fcs > $fce)
+				{
+				if($frs > $fre)
+					{
+					($fcs, $frs, $fce, $fre) = ($fce, $fre, $fcs, $frs) ;
+					}
+				else
+					{
+					($fcs, $fce) = ($fce, $fcs) ;
+					}
+				}
+			else
+				{
+				if($frs > $fre)
+					{
+					($frs, $fre) = ($fre, $frs) ;
+					}
+				#else 
+				#	range in right order
+				}
+			}
+		else
+			{
+			($fcs, $frs) = ($3, $4) ;
+			($fcs) = FromAA($fcs) ;
+
+			($fce, $fre) = ($fcs, $frs) ; 
+			}
+	if
+		(
+		$fcs > $rce
+		|| $fce < $rcs
+		|| $frs > $rre
+		|| $fre < $rrs
+		)
+			{
+			return 0 ; # does not reference range
+			}
+		else
+			{
+			return 1 ; # references range
+			}
+		}
+	}
+else
+	{
+	return 0 ; # no formula
+	}
+}
+
+#-------------------------------------------------------------------------------
+
 1 ;
 
 __END__

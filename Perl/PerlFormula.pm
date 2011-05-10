@@ -111,7 +111,19 @@ return
 			print $dh " defined at '@{$ss->{CELLS}{$cell}{DEFINED_AT}}'" if(exists $ss->{CELLS}{$cell}{DEFINED_AT}) ;
 			print $dh ":\n" ;
 			print $dh "\t$@" ;
-			return($ss->{MESSAGE}{ERROR}) ;
+
+			if($ss->{DEBUG}{PRINT_FORMULA_ERROR})
+				{
+				my $eval_error = $@ ;
+				$eval_error =~ s/ at \(eval.*$//s ;
+				chomp $eval_error ;
+
+				return($ss->{MESSAGE}{ERROR} . " ($eval_error)") ;
+				}
+			else
+				{
+				return($ss->{MESSAGE}{ERROR}) ;
+				}
 			}
 		else
 			{

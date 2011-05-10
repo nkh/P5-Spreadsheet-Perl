@@ -236,7 +236,7 @@ if($is_cell)
 				
 				pop @{$self->{DEPENDENT_STACK}} ;
 				
-				die "Found cyclic dependencies!" ;
+				die "Found cyclic dependencies!\n" ;
 				}
 			else
 				{
@@ -1419,6 +1419,10 @@ It is possible to give a name to a cell or to a range:
   print  "First range: @{$ss{FIRST_RANGE}}\n" ;
 
 Names must be upper case.
+
+Note that, for the moment, column/row insertion and deletion do not
+work with cell/range names. Or, more exactely, SS:P can not change cell
+addresses in named range. IE: after insertion of a row, formula "$ss{B4}" may become "$ss{C4}". if cell B4 had the name "MYCELL", SS:P could not modify the formula "$ss{MYCELL}". In future version, we may choose between replacing MYCELL with a cell address automatically or invalidate all the cells containing a named address that is influenced by a column/row insertion/deletion. 
 
 =head1 LABELING ROW AND COLUMN HEADERS
 

@@ -439,7 +439,7 @@ if
 	|| $row > $range_end_row
 	)
 	{
-	return 0 ;
+	return 0 ; # not within range
 	}
 else
 	{
@@ -456,7 +456,7 @@ sub OffsetAddress
 my ($self, $address, $column_offset, $row_offset, $range) = @_ ;
 
 my $range_print = $range || 'none' ;
-#print "OffsetAddress: $address + $column_offset, $row_offset [$range_print] " ;
+#print "OffsetAddress: $address + $column_offset, $row_offset [$range_print] " ; # there is another print closed to the end of this sub you want to uncomment simulteanously
 
 my ($spreadsheet, $is_cell, $start_cell, $end_cell) = ('') ;
 

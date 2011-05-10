@@ -1,6 +1,26 @@
 Spreadsheet::Perl
 =================
 
+insert_rows_columns check formulas to see if they are inlclusive in the
+	insertion range. should they check for intersection as Delete_column does?
+
+subs checking if a cell or range is contained or intersect with another range
+MUST first Canonize the range so named ranges work too
+
+Named cells in insertion/deletion
+
+tests for col/row insertion
+
+Insert col/row pass "${start_column}1:${start_column}9999") to OffsetFormula
+that doesn't take into account the number of inserted columns
+
+replace is_within_range implementation with something similar to
+FormulaReferencesRange
+
+if a cell contains a formula calculation error (#ERROR, #REF, ..) 
+	should Sum ingnore it or return an error (better is a value telling
+	where the error is comming from
+
 PF should remember also add the line where it was used in the cell
 	this should be optional
 
@@ -15,6 +35,7 @@ find a way to move the examples to tests
 function to show cell dependencies
 
 verification at load time of the formulas could be optional
+
 factorize formula code in STORE/FETCH, is it needed in STORE?
 
 default file format should be perl, writable too (dump streamer?)
