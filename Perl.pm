@@ -240,6 +240,11 @@ if($is_cell)
 				{
 				$current_cell->{CYCLIC_FLAG}++ ;
 				}
+		
+			my $level = '   ' x $self->{DEPENDENCY_STACK_LEVEL} ; 
+			$self->{DEPENDENCY_STACK_LEVEL}++ ;
+
+			push @{$self->{DEPENDENCY_STACK}}, $level . $self->GetName() . '!' . $start_cell if exists $self->{DEPENDENCY_STACK} ;
 			
 			$self->FindDependent($current_cell, $start_cell) ;
 			push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell, , $self->GetName()] ;
@@ -305,7 +310,13 @@ if($is_cell)
 				{
 				$self->initial_value_from_perl_scalar($start_cell, $current_cell)  if(exists $current_cell->{REF_FETCH_SUB}) ;
 				
-				if($current_cell->{NEED_UPDATE} || ! exists $current_cell->{NEED_UPDATE} || ! exists $current_cell->{VALUE})
+				if
+					(
+					$current_cell->{NEED_UPDATE} 
+					|| ! exists $current_cell->{NEED_UPDATE} 
+					|| ! exists $current_cell->{VALUE}
+					|| exists $self->{DEPENDENCY_STACK_NO_CACHE} 
+					)
 					{
 					if($self->{DEBUG}{FETCH_SUB})
 						{
@@ -394,6 +405,8 @@ if($is_cell)
 					$value = undef ;
 					}
 				}
+
+			$self->{DEPENDENCY_STACK_LEVEL}-- ;
 				
 			pop @{$self->{DEPENDENT_STACK}} ;
 			delete $current_cell->{CYCLIC_FLAG} ;
@@ -401,6 +414,12 @@ if($is_cell)
 		}
 	else
 		{
+		# cell has never been accessed before
+		# not even to set a formula in it
+		my $level = '   ' x $self->{DEPENDENCY_STACK_LEVEL} ; 
+
+		push @{$self->{DEPENDENCY_STACK}}, $level . $self->GetName() . '!' . $start_cell if exists $self->{DEPENDENCY_STACK} ;
+
 		if(@{$self->{DEPENDENT_STACK}})
 			{
 			$self->{CELLS}{$start_cell} = {} ; # create the cell to hold the dependent
@@ -493,6 +512,24 @@ if(exists $current_cell->{REF_FETCH_SUB})
 	delete $current_cell->{CACHE} ;
 	$current_cell->{STORE_ON_FETCH}++ ;
 	}
+}
+			
+sub GetAllDependencies
+{
+my ($self, $cell_address, $do_not_use_cache) = @_ ;
+
+# DEPENDENCY_STACK will hold the address of all the 
+# cells accessed while accessing $cell_address
+$self->{DEPENDENCY_STACK} = [] ;
+$self->{DEPENDENCY_STACK_LEVEL} = -1 ;
+$self->{DEPENDENCY_STACK_NO_CACHE}++ if $do_not_use_cache ;
+
+$self->Get($cell_address) ;
+
+my $all_dependencies = $self->{DEPENDENCY_STACK} ; 
+delete $self->{DEPENDENCY_STACK} ;
+
+return $all_dependencies ;
 }
 
 sub FindDependent
@@ -789,6 +826,12 @@ for my $current_address ($self->GetAddressList($address))
 			{
 			# we could show the recalculation time if some debug flag was set
 			$self->Recalculate() ;
+			}
+
+		if(exists $self->{DEBUG}{RECORD_STORE_ALL} || exists $self->{DEBUG}{RECORD_STORE}{$current_address})
+			{	
+			use Data::TreeDumper::Utils ;
+			push @{$current_cell->{STORED_AT}}, Data::TreeDumper::Utils::get_caller_stack ;
 			}
 		}
 	else
@@ -2340,8 +2383,16 @@ The following flags exist:
   
   $ss->{DEBUG}{FETCH}++ ; # shows when a cell value is fetched
   $self->{DEBUG}{FETCH_VALUE}++ ; # shows which value is fetched
+
   $ss->{DEBUG}{STORE}++ ; # shows when a cell value is stored
-  $ss->{DEBUG}{FETCH_TRIGGER}{'A1'}++ ; # displays a message when 'A1' is fetched
+  $ss->{DEBUG}{RECORD_STORE_ALL}++ # keep all call stacks for all the STORE
+  $ss->{DEBUG}{RECORD_STORE}{A1}++ # keep all call stacks for A1
+  # RECORD_STORE_ALL and RECORD_STORE are memory hoags! And generate gigantic dumps but are great debugging help
+  # RECORD_STORE does not have to be set through out your application, it canbe set and unset as you wish
+  # remember that you can pass addresses and ranges to Dump().
+  # print $ss->Dump(['A1', 'B0']) ;#
+  
+  $iss->{DEBUG}{FETCH_TRIGGER}{'A1'}++ ; # displays a message when 'A1' is fetched
   $ss->{DEBUG}{FETCH_TRIGGER}{'A1'} = sub {my ($ss, $address) = @_} ; # calls the sub when 'A1' is fetched
   $ss->{DEBUG}{FETCH_TRIGGER_HANDLER} = sub {my ($ss, $address) = @_} ; # calls sub when any trigger is fetched and no specific sub exists
   $ss->{DEBUG}{STORE_TRIGGER}{'A1'}++ ; # displays a message when 'A1' is stored

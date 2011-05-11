@@ -57,3 +57,4 @@ print $juliette->Dump(undef,1) ;
 $juliette{A3} = PerlFormula('$ss->Sum("ROMEO!A1")') ;  ;
 
 $juliette{A3} ; # void context, generates warning
+

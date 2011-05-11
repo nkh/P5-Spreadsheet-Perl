@@ -17,10 +17,15 @@ $ss->{DEBUG}{INLINE_INFORMATION}++ ;
 #$ss->{DEBUG}{FETCH}++ ;
 #$ss->{DEBUG}{FETCH_VALUE}++ ;
 
-$ss->label_column('B' => 'Col B') ;
-$ss->label_row(5 => 'ROW 5') ;
+# keep a history of call stacks for all STORE 
+$ss->{DEBUG}{RECORD_STORE}{B0}++ ;
+$ss->{DEBUG}{RECORD_STORE}{'A5'}++ ;
+#$ss->{DEBUG}{RECORD_STORE_ALL}++ ;
 
-print $ss->Dump() ;
+$ss->label_column('B' => 'xyz') ;
+$ss->label_column('B' => 'Col B') ;
+
+$ss->label_row(5 => 'ROW 5') ;
 
 $ss{'A1:C5'} = RangeValues(1 .. 15) ;
 $ss{A5} = PF('$ss{B5}') ;
@@ -36,5 +41,5 @@ print $ss->DumpTable() ;
 $ss->DeleteRows(2, 2) ;
 print $ss->DumpTable() ;
 
-#print $ss->Dump() ;
+print $ss->Dump(['A3', 'B0']) ;
 
