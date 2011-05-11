@@ -26,6 +26,7 @@ $ss{B1} = PF('$ss{B5}') ;
 $ss{B3} = 'B3 is just text' ;
 $ss{C1} = PF('$ss->SUM("A1:B5")') ;
 $ss{C3} = PF('$ss->SUM("A3:B5")') ;
+$ss{C3} = PF('$ss->SUM("A5:C5")') ;
 $ss{C4} = 'some text' ;
 
 print $ss->DumpTable() ;

@@ -11,9 +11,6 @@ Named cells in insertion/deletion
 
 tests for col/row insertion
 
-Insert col/row pass "${start_column}1:${start_column}9999") to OffsetFormula
-that doesn't take into account the number of inserted columns
-
 replace is_within_range implementation with something similar to
 FormulaReferencesRange
 

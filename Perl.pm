@@ -225,8 +225,6 @@ if($is_cell)
 				}
 				
 			# circular dependency checking
-			my $caller ;
-			
 			if(exists $current_cell->{CYCLIC_FLAG})
 				{
 				my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
@@ -430,7 +428,7 @@ if($is_cell)
 			{
 			if($column == 0)
 				{
-				$value = $row ;
+				$value = 'R-' . $row ;
 				}
 			else
 				{

@@ -120,7 +120,7 @@ for my $column (reverse sort keys %moved_cell_list)
 		
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
-			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:${start_column}9999") ;
+			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
 			}
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
 		delete $self->{CELLS}{$cell_address} ;
@@ -134,7 +134,7 @@ for my $column (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$column}})
 		{
-		$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:${start_column}9999") ;
+		$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
 		}
 	}
 
@@ -274,7 +274,7 @@ for my $column (reverse sort keys %not_moved_cell_list)
 
 #Todo: check that AA A BB sort properly
 
-for my $column_header (sort grep {/^[A-Z]+0$/} $self->GetCellHeaderList())
+for my $column_header (sort $self->GetCellHeaderList())
 	{
 	my ($column_index) = $column_header =~ /^([A-Z]+)0$/ ;
 	$column_index = FromAA($column_index) ;
@@ -296,6 +296,121 @@ for my $column_header (sort grep {/^[A-Z]+0$/} $self->GetCellHeaderList())
 		}
 	}
 }
+
+#-------------------------------------------------------------------------------
+
+sub DeleteRows
+{
+my ($self, $start_row, $number_of_rows_to_delete) = @_ ;
+
+confess "Invalid '$start_row'\n" unless $start_row =~ /^\s*\d+\s*$/ ;
+
+my $end_row = $start_row + $number_of_rows_to_delete - 1 ;
+
+my (%removed_cell_list, %moved_cell_list, %not_moved_cell_list) ;
+
+for my $cell_address ($self->GetCellList())
+	{
+	# get all the cells for the rows under the $start_row
+	my ($column, $row) = $cell_address =~ /([A-Z]+)(\d+)/ ;
+
+	if( $row >= $start_row)
+		{
+		if ($row < $start_row + $number_of_rows_to_delete)
+			{
+			push @{$removed_cell_list{$row}}, $cell_address ;
+			}
+		else
+			{
+			push @{$moved_cell_list{$row}}, $cell_address ;
+			}
+		}
+	else
+		{
+		push @{$not_moved_cell_list{$row}}, $cell_address ;
+		}
+	}
+
+for my $row (keys %removed_cell_list)
+	{
+	for my $cell_address (@{$removed_cell_list{$row}})
+		{
+		$self->DELETE($cell_address) ; # DELETE would call the appropriate callback
+		}
+	}
+
+for my $row (sort keys %moved_cell_list)
+	{
+	for my $cell_address (@{$moved_cell_list{$row}})
+		{
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
+				{
+				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				}	
+			else
+				{
+				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+				}
+			}
+
+		my $new_address = $self->OffsetAddress($cell_address, 0, - $number_of_rows_to_delete) ;
+
+		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
+		delete $self->{CELLS}{$cell_address} ;
+		}
+	}
+
+# note, the cells don't have to be update in a specific order
+# we keep the same order as moved cells to create the illusion
+# of order
+for my $row (reverse sort keys %not_moved_cell_list)
+	{
+	for my $cell_address (@{$not_moved_cell_list{$row}})
+		{
+		# TODO GENERATED_FORMULA exists only after the cell has been 
+		# compiled. Is there a case where DeleteColumns could be called 
+		# before the formula generation?
+		
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
+				{
+				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				}	
+			else
+				{
+				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+				}
+			}
+		}
+	}
+
+#Todo: check that AA A BB sort properly
+
+for my $row_header (sort $self->GetCellHeaderList())
+	{
+	my ($row) = $row_header =~ /(\d+)$/ ;
+
+	if($row>= $start_row)
+		{
+		if ($row < $start_row + $number_of_rows_to_delete)
+			{
+			$self->DELETE($row_header) ;	
+			}
+		else
+			{
+			my $new_row = $row - $number_of_rows_to_delete ;
+
+			$self->{CELLS}{"\@${new_row}"} = $self->{CELLS}{$row_header} ;
+			delete $self->{CELLS}{$row_header} ;	
+			}
+		}
+	}
+}
+
+#-------------------------------------------------------------------------------
 
 sub FormulaReferenceRange
 {
