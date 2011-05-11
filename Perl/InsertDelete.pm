@@ -347,7 +347,7 @@ for my $row (sort keys %moved_cell_list)
 			{
 			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
 				{
-				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				$self->Set($cell_address, PF("'#REF [dr]'")) ;
 				}	
 			else
 				{
@@ -377,7 +377,7 @@ for my $row (reverse sort keys %not_moved_cell_list)
 			{
 			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
 				{
-				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				$self->Set($cell_address, PF("'#REF [dr]'")) ;
 				}	
 			else
 				{

@@ -37,7 +37,7 @@ eval
 	$self->CanonizeAddress($address) ; # dies if address is not valid
 	} ;
 
-defined $@ ? return(0) : return(1) ;
+$@ ? return(0) : return(1) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -198,9 +198,17 @@ my %name_address = @_ ;
 
 while (my($name, $address) = each %name_address)
 	{
-	#~ print "setting name '$name' to '$address'\n" ;
-	
 	$name = uc($name) ;
+	$name =~ s/^\s+// ;
+	$name =~ s/\s+$// ;
+
+#	print "setting name '$name' to '$address'\n" ;
+
+	if(! exists $self->{NAMED_ADDRESSES}{$name} && $self->IsAddress($name))
+		{
+		confess "Can't use '$name' as a name as it is also a valid cell address.\n." ;
+		}
+
 	$self->{NAMED_ADDRESSES}{$name} = $self->CanonizeAddress($address) ;
 	}
 }
