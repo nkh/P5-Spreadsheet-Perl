@@ -545,7 +545,7 @@ else
 		$offset_address = ("$spreadsheet$lhs:$rhs") ;
 		}
 	#else
-		# reurn undef
+		# return undef
 	}
 
 #print " => $offset_address\n" ;

@@ -48,7 +48,7 @@ for my $cell_address ($self->GetCellList())
 		}
 	}
 
-for my $row (reverse sort keys %moved_cell_list)
+for my $row (reverse SortCells keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$row}})
 		{
@@ -66,7 +66,7 @@ for my $row (reverse sort keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $row (reverse sort keys %not_moved_cell_list)
+for my $row (reverse SortCells keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{
@@ -74,7 +74,7 @@ for my $row (reverse sort keys %not_moved_cell_list)
 		}
 	}
 
-for my $row_header (reverse sort grep {/^@/} $self->GetCellHeaderList())
+for my $row_header (reverse SortCells grep {/^@/} $self->GetCellHeaderList())
 	{
 	my ($row_index) = $row_header =~ /^@(.+)/ ;
 	if($row_index >= $start_row)
@@ -112,7 +112,7 @@ for my $cell_address ($self->GetCellList())
 		}
 	}
 
-for my $column (reverse sort keys %moved_cell_list)
+for my $column (reverse SortCells keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$column}})
 		{
@@ -130,7 +130,7 @@ for my $column (reverse sort keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $column (reverse sort keys %not_moved_cell_list)
+for my $column (reverse SortCells keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$column}})
 		{
@@ -138,11 +138,9 @@ for my $column (reverse sort keys %not_moved_cell_list)
 		}
 	}
 
-#Todo: check that AA A BB sort properly
-
 my $start_column_index = FromAA($start_column) ;
 
-for my $column_header (reverse sort grep {/^[A-Z]+0$/} $self->GetCellHeaderList())
+for my $column_header (reverse SortCells grep {/^[A-Z]+0$/} $self->GetCellHeaderList())
 	{
 	my ($column_index) = $column_header =~ /^([A-Z]+)0$/ ;
 	$column_index = FromAA($column_index) ;
@@ -224,7 +222,7 @@ for my $column (keys %removed_cell_list)
 		}
 	}
 
-for my $column (sort keys %moved_cell_list)
+for my $column (SortCells keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$column}})
 		{
@@ -250,7 +248,7 @@ for my $column (sort keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $column (reverse sort keys %not_moved_cell_list)
+for my $column (reverse SortCells keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$column}})
 		{
@@ -272,9 +270,7 @@ for my $column (reverse sort keys %not_moved_cell_list)
 		}
 	}
 
-#Todo: check that AA A BB sort properly
-
-for my $column_header (sort $self->GetCellHeaderList())
+for my $column_header (SortCells $self->GetCellHeaderList())
 	{
 	my ($column_index) = $column_header =~ /^([A-Z]+)0$/ ;
 	$column_index = FromAA($column_index) ;
@@ -339,7 +335,7 @@ for my $row (keys %removed_cell_list)
 		}
 	}
 
-for my $row (sort keys %moved_cell_list)
+for my $row (SortCells keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$row}})
 		{
@@ -365,7 +361,7 @@ for my $row (sort keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $row (reverse sort keys %not_moved_cell_list)
+for my $row (reverse SortCells keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{
@@ -387,9 +383,7 @@ for my $row (reverse sort keys %not_moved_cell_list)
 		}
 	}
 
-#Todo: check that AA A BB sort properly
-
-for my $row_header (sort $self->GetCellHeaderList())
+for my $row_header (SortCells $self->GetCellHeaderList())
 	{
 	my ($row) = $row_header =~ /(\d+)$/ ;
 

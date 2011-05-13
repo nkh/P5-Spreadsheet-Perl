@@ -8,11 +8,16 @@ subs checking if a cell or range is contained or intersect with another range MU
 
 Named cells in insertion/deletion
 
+dependents are stored by name not by reference, thus do not work, yet, with
+insert and delete
+
 tests for col/row insertion
 
 if a cell contains a formula calculation error (#ERROR, #REF, ..) 
 	should Sum ingnore it or return an error (better is a value telling
 	where the error is comming from
+
+should arithmetic formulas consider undefed cells like cells containing 0?
 
 test function are_spreadsheet_values_equal
 
@@ -55,9 +60,6 @@ Composite initialisation type? Composite(PerlFormula(), 7, Format(), ....) ;
 Clear(FORMULA, VALUE, FORMAT, ALL) ;
 
 perl debugger support/triggers
-dependency graph
-
-# 0.07 ----
 
 #Common format
 	#register non spreadsheet formulas => builtin functions serialisation

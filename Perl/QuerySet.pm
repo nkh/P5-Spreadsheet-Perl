@@ -54,7 +54,7 @@ sub Recalculate
 {
 my $self = shift ;
 
-for my $cell_name (keys %{$self->{CELLS}})
+for my $cell_name (SortCells keys %{$self->{CELLS}})
 	{
 	if(exists $self->{CELLS}{$cell_name}{FETCH_SUB})
 		{
