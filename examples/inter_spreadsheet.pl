@@ -13,6 +13,7 @@ $romeo->SetName('ROMEO') ;
 $romeo->{DEBUG}{INLINE_INFORMATION}++ ;
 #~ $romeo->{DEBUG}{ADDRESS_LIST}++ ;
 #~ $romeo->{DEBUG}{FETCH_FROM_OTHER}++ ;
+$romeo->{DEBUG}{PRINT_DEPENDENT_LIST}++ ;
 $romeo->{DEBUG}{DEPENDENT_STACK_ALL}++ ;
 #$romeo->{DEBUG}{DEPENDENT_STACK}{A2}++ ;
 $romeo->{DEBUG}{DEPENDENT}++ ;
@@ -25,6 +26,7 @@ $juliette->{DEBUG}{INLINE_INFORMATION}++ ;
 #~ $juliette->{DEBUG}{DEFINED_AT}++ ;
 #~ $juliette->{DEBUG}{ADDRESS_LIST}++ ;
 #~ $juliette->{DEBUG}{FETCH_FROM_OTHER}++ ;
+$juliette->{DEBUG}{PRINT_DEPENDENT_LIST}++ ;
 $juliette->{DEBUG}{DEPENDENT_STACK_ALL}++ ;
 $juliette->{DEBUG}{DEPENDENT}++ ;
 $juliette->{DEBUG}{MARK_ALL_DEPENDENT}++ ;
@@ -52,6 +54,7 @@ $romeo{A3} = PerlFormula('$ss{A2}') ;
 
 print "Calling Recaculate()\n" ;
 $romeo->Recalculate() ; #update dependents
+$juliette->Recalculate() ; #update dependents
 #~ # or 
 #~ print <<EOP ;  # must access to update dependents
 #~ \$romeo{A1} = $romeo{A1}
@@ -64,13 +67,16 @@ $romeo->Recalculate() ; #update dependents
 delete $romeo->{DEBUG}{DEPENDENT_STACK_ALL} ;
 delete $juliette->{DEBUG}{DEPENDENT_STACK_ALL} ;
 
-use Text::Table ;
-my $table = Text::Table->new() ;
-$table->load
-	(
-	[$romeo->DumpTable(undef, undef, {headingText => 'Romeo'}),	$juliette->DumpTable(undef, undef, {headingText => 'Juliette'})]
-	);
-print $table ;
+#use Text::Table ;
+#my $table = Text::Table->new() ;
+#$table->load
+#	(
+#	[
+print $romeo->DumpTable(undef, undef, {headingText => 'Romeo'}) ;
+print $juliette->DumpTable(undef, undef, {headingText => 'Juliette'}) ;
+#]
+#	);
+#print $table ;
 
 
 #print $juliette->DumpTable(undef, undef, {headingText => 'Juliette'}) ;

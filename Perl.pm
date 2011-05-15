@@ -62,7 +62,8 @@ return
 	, MESSAGE             => 
 				{
 				ERROR => '#ERROR'
-				, NEED_UPDATE => "#NEED UPDATE"
+				, NEED_UPDATE => '#NEED UPDATE'
+				, VIRTUAL_CELL => '#VC'
 				, ROW_PREFIX => 'R-' 
 				}
 				
@@ -195,7 +196,7 @@ if($self->{DEBUG}{FETCH})
 	
 if($is_cell)
 	{
-	my $value ;
+	my ($value, $evaluation_ok, $evaluation_type, $evaluation_data) ;
 	
 	#trigger
 	if(exists $self->{DEBUG}{FETCH_TRIGGER}{$start_cell})
@@ -251,9 +252,18 @@ if($is_cell)
 				push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell, $self->GetName()] ;
 				print $dh $self->DumpDependentStack("Cyclic dependency while fetching '$start_cell'") ;
 				
+				my @dump ;
+
+				for my $dependent (@{$self->{DEPENDENT_STACK}})
+					{
+					my ($spreadsheet, $address, $name) = @$dependent ;
+					push @dump, "$name!$address" ;
+					}
+
 				pop @{$self->{DEPENDENT_STACK}} ;
-				
-				die "Cyclic dependency\n" ;
+
+				# Todo: is there some cleanup to do before calling die?
+				die bless {cycle => \@dump}, 'Cyclic dependency' ;
 				}
 			else
 				{
@@ -328,12 +338,14 @@ if($is_cell)
 #TODO!!!!  next section should be in eval and formula should generate an exception. this is needed so a failed formula doesn't update NEED_UPDATE state nor saves the erroneous value trought STORE_ON_FETCH or a perl scalar. Although I am not sure. Maybe it is better to store the erroneous values if they are descriptive enought so it is clear that the values are not in synch.	
 					if(exists $current_cell->{FETCH_SUB_ARGS} && @{$current_cell->{FETCH_SUB_ARGS}})
 						{
-						$value = ($current_cell->{FETCH_SUB})->($self, $start_cell, @{$current_cell->{FETCH_SUB_ARGS}}) ;
+						($value, $evaluation_ok, $evaluation_type, $evaluation_data)
+							= ($current_cell->{FETCH_SUB})->($self, $start_cell, @{$current_cell->{FETCH_SUB_ARGS}}) ;
 						}
 						
 					else
 						{
-						$value = ($current_cell->{FETCH_SUB})->($self, $start_cell) ;
+						($value, $evaluation_ok, $evaluation_type, $evaluation_data)
+							= ($current_cell->{FETCH_SUB})->($self, $start_cell) ;
 						}
 						
 					if(exists $current_cell->{REF_STORE_SUB} && exists $current_cell->{STORE_ON_FETCH})
@@ -352,16 +364,41 @@ if($is_cell)
 							$current_cell->{STORE_SUB}->($self, $start_cell, $value) ;
 							}
 						}
+						
+					if($self->{DEBUG}{PRINT_FORMULA_ERROR} && $evaluation_ok == 0)
+						{
+						$value .= " ($evaluation_type)" ;
+						}
+
+					$current_cell->{EVAL_TYPE} = $evaluation_type ;
+					$current_cell->{EVAL_OK} = $evaluation_ok ;
+					$current_cell->{EVAL_DATA} = $evaluation_data ;
 					
 					# handle caching
 					if((! $self->{CACHE}) || (exists $current_cell->{CACHE} && (! $current_cell->{CACHE})))
 						{
 						delete $current_cell->{VALUE} ;
+						$current_cell->{NEED_UPDATE} = 1 ;
 						}
 					else
 						{
 						$current_cell->{VALUE} = $value ;
 						$current_cell->{NEED_UPDATE} = 0 ;
+						}
+
+					if(@{$self->{DEPENDENT_STACK}} != 1)
+						{
+						# catch exception at cell that started computation
+						unless ($evaluation_ok)
+							{
+							#Todo: cleanup automatically
+							$self->{DEPENDENCY_STACK_LEVEL}-- if exists $self->{DEPENDENCY_STACK_LEVEL} ;
+					
+							pop @{$self->{DEPENDENT_STACK}} ;
+							delete $current_cell->{CYCLIC_FLAG} ;
+
+							die bless {spreadsheet => $self, cell => $start_cell}, 'Invalid dependency cell' ;
+							}
 						}
 					}
 				else
@@ -383,6 +420,7 @@ if($is_cell)
 					$current_cell->{VALUE} = $current_cell->{REF_FETCH_SUB}->($self, $start_cell) ;
 					}
 					
+				# Todo: shouldn't we handle cache here too?!
 				if(exists $current_cell->{VALUE})
 					{
 					$value = $current_cell->{VALUE} ;
@@ -534,7 +572,7 @@ if(exists $self->{DEPENDENT_STACK} && @{$self->{DEPENDENT_STACK}})
 	{
 	my $dependent = @{$self->{DEPENDENT_STACK}}[-1] ;
 	my ($spreadsheet, $cell_name) = @$dependent ;
-	my $dependent_name = "$spreadsheet, $cell_name" ;
+	my $dependent_name = $spreadsheet->GetName() . "!$cell_name" ;
 	
 	if($self->{DEBUG}{DEPENDENT})
 		{
@@ -1424,6 +1462,14 @@ If there is no screen width available (redirecting to a file for example) B<78> 
   ...
   
 You can set the 'noPageCount' option if you don't want the page count.
+
+Note:
+If $ss->{DEBUG}{PRINT_DEPENDENT_LIST} is set, the cells depending
+on a specific cell are listed in the inline information ( a reverse
+dependency list)
+
+To make sure the dependent list is up to date before display,
+Recalculate() is called before dumping the spreadsheet.
 
 See B<Text::ASCIITable>.
 
@@ -2386,10 +2432,12 @@ The following flags exist:
   $ss->{DEBUG}{STORED}++ ; # counts how many times the cell is stored
   
   $ss->{DEBUG}{PRINT_FORMULA}++ ; # show the info about formula generation
+  $ss->{DEBUG}{PRINT_FORMULA_EVAL_STATUS}++ ; # show the info about formula execution
   $ss->{DEBUG}{INLINE_INFORMATION}++ ; # inline cell information in the table dump
   $ss->{DEBUG}{PRINT_ORIGINAL_FORMULA}++ ; # inline original formula in the table dump
   $ss->{DEBUG}{PRINT_FORMULA_ERROR}++ ; # inline the error generated by the formula evaluation
-  
+  $ss->{DEBUG}{PRINT_DEPENDENT_LIST}++ # inline the list of dependents in the table dump
+  $ss->{DEBUG}{PRINT_CYCLIC_DEPENDENCY})++ # inline dependency cyles in the table dump
 
   $ss->{DEBUG}{DEFINED_AT}++ ; # show where the cell has been defined
   $ss->{DEBUG}{ADDRESS_LIST}++ ; # shows the generated address lists
