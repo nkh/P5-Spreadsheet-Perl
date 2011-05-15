@@ -21,7 +21,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT ;
 push @EXPORT, qw() ;
 
-our $VERSION = '0.02' ;
+our $VERSION = '0.03' ;
 
 #-------------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ for my $cell_address ($self->GetCellList())
 		}
 	}
 
-for my $row (reverse SortCells keys %moved_cell_list)
+for my $row (reverse sort keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$row}})
 		{
@@ -66,7 +66,7 @@ for my $row (reverse SortCells keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $row (reverse SortCells keys %not_moved_cell_list)
+for my $row (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{
@@ -104,17 +104,17 @@ for my $cell_address ($self->GetCellList())
 
 	if( $column_index >= $start_column_index)
 		{
-		push @{$moved_cell_list{$column}}, $cell_address ;
+		push @{$moved_cell_list{$column_index}}, $cell_address ;
 		}
 	else
 		{
-		push @{$not_moved_cell_list{$column}}, $cell_address ;
+		push @{$not_moved_cell_list{$column_index}}, $cell_address ;
 		}
 	}
 
-for my $column (reverse SortCells keys %moved_cell_list)
+for my $column_index (reverse sort keys %moved_cell_list)
 	{
-	for my $cell_address (@{$moved_cell_list{$column}})
+	for my $cell_address (@{$moved_cell_list{$column_index}})
 		{
 		my $new_address = $self->OffsetAddress($cell_address, $number_of_columns_to_insert, 0) ; 
 		
@@ -130,9 +130,9 @@ for my $column (reverse SortCells keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $column (reverse SortCells keys %not_moved_cell_list)
+for my $column_index (reverse sort keys %not_moved_cell_list)
 	{
-	for my $cell_address (@{$not_moved_cell_list{$column}})
+	for my $cell_address (@{$not_moved_cell_list{$column_index}})
 		{
 		$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
 		}
@@ -201,30 +201,30 @@ for my $cell_address ($self->GetCellList())
 		{
 		if ($column_index < $start_column_index + $number_of_columns_to_delete)
 			{
-			push @{$removed_cell_list{$column}}, $cell_address ;
+			push @{$removed_cell_list{$column_index}}, $cell_address ;
 			}
 		else
 			{
-			push @{$moved_cell_list{$column}}, $cell_address ;
+			push @{$moved_cell_list{$column_index}}, $cell_address ;
 			}
 		}
 	else
 		{
-		push @{$not_moved_cell_list{$column}}, $cell_address ;
+		push @{$not_moved_cell_list{$column_index}}, $cell_address ;
 		}
 	}
 
-for my $column (keys %removed_cell_list)
+for my $column_index (keys %removed_cell_list)
 	{
-	for my $cell_address (@{$removed_cell_list{$column}})
+	for my $cell_address (@{$removed_cell_list{$column_index}})
 		{
 		$self->DELETE($cell_address) ; # DELETE would call the appropriate callback
 		}
 	}
 
-for my $column (SortCells keys %moved_cell_list)
+for my $column_index (sort keys %moved_cell_list)
 	{
-	for my $cell_address (@{$moved_cell_list{$column}})
+	for my $cell_address (@{$moved_cell_list{$column_index}})
 		{
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
@@ -248,9 +248,9 @@ for my $column (SortCells keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $column (reverse SortCells keys %not_moved_cell_list)
+for my $column_index (reverse sort keys %not_moved_cell_list)
 	{
-	for my $cell_address (@{$not_moved_cell_list{$column}})
+	for my $cell_address (@{$not_moved_cell_list{$column_index}})
 		{
 		# TODO GENERATED_FORMULA exists only after the cell has been 
 		# compiled. Is there a case where DeleteColumns could be called 
@@ -335,7 +335,7 @@ for my $row (keys %removed_cell_list)
 		}
 	}
 
-for my $row (SortCells keys %moved_cell_list)
+for my $row (sort keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$row}})
 		{
@@ -361,7 +361,7 @@ for my $row (SortCells keys %moved_cell_list)
 # note, the cells don't have to be update in a specific order
 # we keep the same order as moved cells to create the illusion
 # of order
-for my $row (reverse SortCells keys %not_moved_cell_list)
+for my $row (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{

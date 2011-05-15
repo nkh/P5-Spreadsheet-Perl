@@ -97,15 +97,8 @@ for my $range (@$ranges)
 		{
 		if($ss->{DEBUG}{PRINT_DEPENDENT_LIST})
 			{
-			# dependent are set after someone used a cell
-			# in DumpTable, a cell can be displayed before
-			# its dependents are displayed, thus will have
-			# an uncomplete dependent list
-			# to make sure the dependent list is up to date
-			# before display, Recalculate the spreadsheet
-			
-			my $dh = $ss->{DEBUG}{ERROR_HANDLE} ;
-			print $dh "PRINT_DEPENDENT_LIST set, calling Recalculate before dumping spreadsheet in table form.\n" ;
+#			my $dh = $ss->{DEBUG}{ERROR_HANDLE} ;
+#			print $dh "PRINT_DEPENDENT_LIST set, calling Recalculate before dumping spreadsheet in table form.\n" ;
 
 			$ss->Recalculate() ;
 			}

@@ -1134,7 +1134,7 @@ Spreadsheet::Perl functionality:
 
 =item * Automatic formula offsetting
 
-=item * Insertion of rows and columns (no deletion yet)
+=item * Insertion of rows and columns (with some limitation)
 
 =item * Relative and fixed cell addresses
 
@@ -1269,6 +1269,23 @@ spreadsheet functions are accessed through the tied object.
   use Spreadsheet::Perl ;
   tie my %ss, "Spreadsheet::Perl", NAME => 'TEST' ;
   %ss = do "ss_setup.pl" or confess "Couldn't read setup file 'ss_setup.pl'" ;
+
+
+=head2 insertion and deletion of rows and columns
+
+#TODO: complete this section
+# list the APIs and show examples
+
+Within a single spreadsheet:
+	- insertion row/col
+	- deletion row/col
+	* dependent still broken
+
+Inter spreadsheet:
+	* insertion row/col
+	* deletion row/col
+	* dependent still broken
+
 
 =head2 dumping a spreadsheet
 
@@ -2506,11 +2523,9 @@ Here are some of the things that I find missing, this doesn't mean all are good 
 
 =item * Gnumeric/Excel formula syntax (common format is done)	
 
-=item * complex stuff (I am working on this but Gnumeric and excel do diffrent things)
+=item * complex stuff 
 
 =over 4
-
-=item * Deletion of rows and columns
 
 =item * Sorting
 

@@ -1,7 +1,11 @@
 Spreadsheet::Perl
 =================
 
+insert_rows_columns works only in the same spreadsheet
+	this can be fixed though, Recalc and use dependents to modify
+	inter spreadsheet formulas
 
+deletion of cell should update the dependent list
 
 insert_rows_columns check formulas to see if they are inlclusive in the
 	insertion range. should they check for intersection as Delete_column does?
