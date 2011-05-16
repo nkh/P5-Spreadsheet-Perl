@@ -27,11 +27,12 @@ $romeo{A1} = PerlFormula('$ss->Sum("JULIETTE!A1:A2", "A2")') ;
 $romeo{A2} = 100 ;
 $romeo{A3} = PerlFormula('$ss{A2}') ;
 $romeo{'B1:B2'} = 10 ;
+$romeo{'C1:C2'} = Formula('B1+B1') ;
 
 $juliette{A1} = 5 ;
 $juliette{A2} = PerlFormula('$ss->Sum("ROMEO!B1:B2") + $ss{"ROMEO!A2"}') ; 
 
-#print $romeo->DumpTable() ;
+print $romeo->DumpTable() ;
 #print $juliette->DumpTable() ;
 
 use Data::TreeDumper ;

@@ -287,12 +287,12 @@ if($is_cell)
 
 				if(exists $current_cell->{PERL_FORMULA})
 					{
-					$formula = ': ' . $current_cell->{PERL_FORMULA}[1] ;
+					$formula = ': ' . $current_cell->{GENERATED_FORMULA} ;
 					}
 
 				if(exists $current_cell->{FORMULA})
 					{
-					$formula = ': ' . $current_cell->{FORMULA}[1] ;
+					$formula = ': ' . $current_cell->{GENERATED_FORMULA} ;
 					}
 
 				push @{$self->{DEPENDENCY_STACK}}, "$level$name$start_cell$formula" ;

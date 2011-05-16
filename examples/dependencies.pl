@@ -10,7 +10,8 @@ use Data::TreeDumper ;
 my $ss = tie my %ss, "Spreadsheet::Perl" ;
 
 $ss{'A1'} = PerlFormula('$ss{A2} + $ss{A5}') ;
-$ss{'A2:A5'} = PerlFormula('$ss{"A3"}') ;
+$ss{'A2:A4'} = PerlFormula('$ss{"A3"}') ;
+$ss{'A5'} = Formula('A6') ;
 $ss{'A3'} = PerlFormula('$ss->Sum("A4:B5")') ;
 
 my $dependencies = $ss->GetAllDependencies('A1', 1) ;
