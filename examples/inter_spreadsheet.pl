@@ -44,10 +44,10 @@ $romeo{A1} = PerlFormula('$ss->Sum("JULIETTE!A1:A2", "A2")') ;
 $romeo{A2} = 100 ;
 $romeo{A3} = PerlFormula('$ss{A2}') ;
 
-#use Data::TreeDumper ;
-#my $dependencies = $juliette->GetAllDependencies('A5', 1) ;
-#my $title = shift @{$dependencies} ;
-#print DumpTree($dependencies, $title, DISPLAY_ADDRESS => 0) ;
+use Data::TreeDumper ;
+my $dependencies = $juliette->GetAllDependencies('A2', 1) ;
+my $title = shift @{$dependencies} ;
+print DumpTree($dependencies, $title, DISPLAY_ADDRESS => 0) ;
 
 #$romeo->Recalculate() ; #update dependents
 #print $romeo->DumpTable() ;

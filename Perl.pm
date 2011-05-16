@@ -143,11 +143,7 @@ my ($cell_or_range, $is_cell, $start_cell, $end_cell) = $self->CanonizeAddress($
 
 if(defined $ss_reference)
 	{
-	if($ss_reference == $self)
-		{
-		# fine, it's us
-		}
-	else
+	if($ss_reference != $self)
 		{
 		if($self->{DEBUG}{FETCH_FROM_OTHER})
 			{
@@ -168,9 +164,18 @@ if(defined $ss_reference)
 		
 		my $cell_value = $ss_reference->Get($address) ;
 		
-		delete $ss_reference->{DEPENDENCY_STACK} ;
-		delete $ss_reference->{DEPENDENCY_STACK_LEVEL} ;
-		delete $ss_reference->{DEPENDENCY_STACK_NO_CACHE} ;
+		# handle DEPENDENCY stack 
+		
+		# TODO: delete reference in ss_reference
+		# be carefull in case C = B = A, and deleting C
+		# means deleting A
+		# have each get return a dependency stack instead
+
+		#delete $ss_reference->{DEPENDENCY_STACK} ;
+		#delete $ss_reference->{DEPENDENCY_STACK_NO_CACHE} ;
+
+		$self->{DEPENDENCY_STACK_LEVEL} = $ss_reference->{DEPENDENCY_STACK_LEVEL} ;
+		#delete $ss_reference->{DEPENDENCY_STACK_LEVEL} ;
 
 		return($cell_value) ;
 		}
@@ -183,14 +188,15 @@ else
 if($self->{DEBUG}{FETCH})
 	{
 	my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
-	
+	my $name = $self->GetName() ;
+
 	if($is_cell)
 		{
-		print $dh "Fetching cell '$cell_or_range'\n" ;
+		print $dh "Fetching cell '$name!$cell_or_range'\n" ;
 		}
 	else
 		{
-		print $dh "Fetching range '$cell_or_range'\n" ;
+		print $dh "Fetching range '$name!$cell_or_range'\n" ;
 		}
 	}
 	
@@ -277,7 +283,19 @@ if($is_cell)
 
 				my $name = ($self->GetName() || "$self") . '!' ;
 
-				push @{$self->{DEPENDENCY_STACK}}, "$level$name$start_cell" ;
+				my $formula = '' ;
+
+				if(exists $current_cell->{PERL_FORMULA})
+					{
+					$formula = ': ' . $current_cell->{PERL_FORMULA}[1] ;
+					}
+
+				if(exists $current_cell->{FORMULA})
+					{
+					$formula = ': ' . $current_cell->{FORMULA}[1] ;
+					}
+
+				push @{$self->{DEPENDENCY_STACK}}, "$level$name$start_cell$formula" ;
 				}
 
 			$self->FindDependent($current_cell, $start_cell) ;
@@ -430,7 +448,6 @@ if($is_cell)
 					$value = undef ;
 					}
 				}
-
 			$self->{DEPENDENCY_STACK_LEVEL}-- if exists $self->{DEPENDENCY_STACK_LEVEL} ;
 				
 			pop @{$self->{DEPENDENT_STACK}} ;
@@ -444,7 +461,7 @@ if($is_cell)
 		if(exists $self->{DEPENDENCY_STACK})
 			{
 			my $level = '   ' x $self->{DEPENDENCY_STACK_LEVEL} ; 
-			my $name = ($self->GetName() || "$self") . '!' ;
+			my $name = $self->GetName() . '!' ;
 
 			push @{$self->{DEPENDENCY_STACK}}, "$level$name$start_cell" ;
 			}

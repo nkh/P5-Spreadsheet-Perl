@@ -9,8 +9,6 @@ use Data::TreeDumper ;
 
 my $ss = tie my %ss, "Spreadsheet::Perl" ;
 
-#$ss->{DEBUG}{FETCH}++ ;
-
 $ss{'A1'} = PerlFormula('$ss{A2} + $ss{A5}') ;
 $ss{'A2:A5'} = PerlFormula('$ss{"A3"}') ;
 $ss{'A3'} = PerlFormula('$ss->Sum("A4:B5")') ;

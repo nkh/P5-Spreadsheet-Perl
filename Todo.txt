@@ -6,6 +6,7 @@ insert_rows_columns works only in the same spreadsheet
 	inter spreadsheet formulas
 
 deletion of cell should update the dependent list
+	in inter spreadsheet too
 
 insert_rows_columns check formulas to see if they are inlclusive in the
 	insertion range. should they check for intersection as Delete_column does?
@@ -13,9 +14,6 @@ insert_rows_columns check formulas to see if they are inlclusive in the
 subs checking if a cell or range is contained or intersect with another range MUST first Canonize the range so named ranges work too
 
 Named cells in insertion/deletion
-
-dependents are stored by name not by reference, thus do not work, yet, with
-insert and delete
 
 tests for col/row insertion
 
@@ -34,12 +32,12 @@ code is not documented making the API difficult to grasp and use
 find a way to move the examples to tests
 
 function to show cell dependencies
-	in a tree mode with formulas, based on get dependencies. also show the cell
-	names if any
+	in a tree mode with formulas, based on get dependencies. also show the cell	names if any
 
 verification at load time of the formulas could be optional
 
 factorize formula code in STORE/FETCH, is it needed in STORE?
+	=> needed, exqmple in error directory
 
 default file format should be perl, writable too (dump streamer?)
 
