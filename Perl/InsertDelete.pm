@@ -58,6 +58,12 @@ for my $row (reverse sort keys %moved_cell_list)
 			{
 			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
 			}
+
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->OffsetDependents($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+			}
+
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
 		delete $self->{CELLS}{$cell_address} ;
 		}
@@ -70,7 +76,15 @@ for my $row (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{
-		$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+			}
+
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->OffsetDependents($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+			}
 		}
 	}
 
@@ -122,6 +136,12 @@ for my $column_index (reverse sort keys %moved_cell_list)
 			{
 			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
 			}
+
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->OffsetDependents($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
 		delete $self->{CELLS}{$cell_address} ;
 		}
@@ -134,7 +154,15 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$column_index}})
 		{
-		$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->OffsetDependents($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			}
 		}
 	}
 
@@ -156,6 +184,7 @@ for my $column_header (reverse SortCells grep {/^[A-Z]+0$/} $self->GetCellHeader
 	}
 }
 
+#-------------------------------------------------------------------------------
 
 sub OffsetFormula
 {
@@ -175,6 +204,76 @@ $formula =~ s/(\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$self->Offs
 $self->Set($cell_address, PF($formula)) ;
 }
 
+
+#-------------------------------------------------------------------------------
+
+sub OffsetDependents
+{
+my 
+	(
+	$self, $cell_address,
+	$start_column, $columns_to_insert,
+	$start_row, $rows_to_insert,
+	$range
+	)  = @_ ;
+
+return unless exists $self->{CELLS}{$cell_address}{DEPENDENT} ;
+
+my $dependents = $self->{CELLS}{$cell_address}{DEPENDENT} ; 
+
+my @new_dependents ;
+
+for my $dependent_name (keys %{$dependents})
+	{
+	my $dependent = $dependents->{$dependent_name} ;
+	my ($spreadsheet, $cell_name) = @{$dependent->{DEPENDENT_DATA}} ;
+
+	my $new_cell_name = $self->OffsetAddress($cell_name, $columns_to_insert, $rows_to_insert, $range) ;
+
+	$dependent->{DEPENDENT_DATA}[1] = $new_cell_name ;
+	push @new_dependents, $dependent ;
+
+	delete $dependents->{$dependent_name} ;
+	}
+
+for my $dependent (@new_dependents)
+	{
+	my $dependent_name = $dependent->{DEPENDENT_DATA}[2] . '!' . $dependent->{DEPENDENT_DATA}[1] ;
+	$dependents->{$dependent_name} = $dependent ;
+	}
+
+#TODO check other spreadsheet to see if their dependent list points
+#to this spreadsheet
+}
+
+#-------------------------------------------------------------------------------
+
+sub DeleteDependents
+{
+my ($self, $cell_address, $range) = @_ ;
+
+# delete any dependent that is within the range
+
+return unless exists $self->{CELLS}{$cell_address}{DEPENDENT} ;
+
+my $dependents = $self->{CELLS}{$cell_address}{DEPENDENT} ; 
+
+my @new_dependents ;
+
+for my $dependent_name (keys %{$dependents})
+	{
+	my $dependent = $dependents->{$dependent_name} ;
+	my ($spreadsheet, $cell_name) = @{$dependent->{DEPENDENT_DATA}} ;
+
+	if($self->is_within_range($cell_name, $range))
+		{
+		delete $dependents->{$dependent_name} ;
+		}
+	}
+
+#TODO check other spreadsheet to see if their dependent list points
+#to this spreadsheet
+}
 
 #-------------------------------------------------------------------------------
 
@@ -238,6 +337,13 @@ for my $column_index (sort keys %moved_cell_list)
 				}
 			}
 
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
+
+			$self->OffsetDependents($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+
 		my $new_address = $self->OffsetAddress($cell_address, - $number_of_columns_to_delete, 0) ;
 
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
@@ -267,12 +373,18 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
 				}
 			}
+
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
+			$self->OffsetDependents($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+			}
 		}
 	}
 
-for my $column_header (SortCells $self->GetCellHeaderList())
+for my $column_header (SortCells grep {!/^@/} $self->GetCellHeaderList())
 	{
-	my ($column_index) = $column_header =~ /^([A-Z]+)0$/ ;
+	my ($column_index) = $column_header =~ /^([A-Z@]+)0$/ ;
 	$column_index = FromAA($column_index) ;
 
 	if($column_index >= $start_column_index)
@@ -351,6 +463,12 @@ for my $row (sort keys %moved_cell_list)
 				}
 			}
 
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
+			$self->OffsetDependents($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+			}
+
 		my $new_address = $self->OffsetAddress($cell_address, 0, - $number_of_rows_to_delete) ;
 
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
@@ -380,10 +498,16 @@ for my $row (reverse sort keys %not_moved_cell_list)
 				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
 				}
 			}
+
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
+			$self->OffsetDependents($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+			}
 		}
 	}
 
-for my $row_header (SortCells $self->GetCellHeaderList())
+for my $row_header (sort grep {/^@/} $self->GetCellHeaderList())
 	{
 	my ($row) = $row_header =~ /(\d+)$/ ;
 

@@ -689,6 +689,8 @@ for my $current_address ($self->GetAddressList($address))
 	if($value_is_valid)
 		{
 		$self->MarkDependentForUpdate($current_cell, $address) ;
+		$self->InvalidateCellInDependent($current_address) ;
+
 		$current_cell->{DEFINED_AT} = [caller] if(exists $self->{DEBUG}{DEFINED_AT}) ;
 		
 		for (ref $value)
@@ -853,7 +855,7 @@ for my $current_address ($self->GetAddressList($address))
 				$current_cell->{REF_STORE_SUB}->($self, $current_address, $value_to_store) ;
 				}
 			}
-			
+		
 		if($self->{AUTOCALC} && exists $current_cell->{DEPENDENT} && $current_cell->{DEPENDENT})
 			{
 			$self->Recalculate() ;
@@ -873,6 +875,8 @@ for my $current_address ($self->GetAddressList($address))
 }
 
 *Set = \&STORE ;
+
+#-------------------------------------------------------------------------------
 
 sub MarkDependentForUpdate
 {
@@ -956,6 +960,27 @@ delete $current_cell->{CYCLIC_FLAG} ;
 
 #-------------------------------------------------------------------------------
 
+sub InvalidateCellInDependent
+{
+
+my ($self, $cell_address) = @_ ;
+
+my $dependent_name = $self->GetName() . '!' . $cell_address ;
+
+for my $current_address ($self->GetCellList())
+	{
+	if(exists $self->{CELLS}{$current_address}{DEPENDENT})
+		{
+		if(exists $self->{CELLS}{$current_address}{DEPENDENT}{$dependent_name})
+			{
+			delete $self->{CELLS}{$current_address}{DEPENDENT}{$dependent_name} ;
+			}
+		}
+	}
+}
+
+#-------------------------------------------------------------------------------
+
 sub DELETE   
 {
 my $self    = shift ;
@@ -967,11 +992,19 @@ for my $current_address ($self->GetAddressList($address))
 		{
 		if($self->{CELLS}{$current_address}{DELETE_SUB}->($self, $current_address, @{$self->{CELLS}{$current_address}{DELETE_SUB_ARGS}}))
 			{
+			$self->MarkDependentForUpdate($self->{CELLS}{$current_address}, $current_address) ;
+
+			$self->InvalidateCellInDependent($current_address) ;
+
 			delete $self->{CELLS}{$current_address} ;
 			}
 		}
 	else
 		{
+		$self->MarkDependentForUpdate($self->{CELLS}{$current_address}, $current_address) ;
+		
+		$self->InvalidateCellInDependent($current_address) ;
+
 		delete $self->{CELLS}{$current_address} ;
 		}
 	}
@@ -983,7 +1016,7 @@ my $self    = shift ;
 my $address = shift ;
 
 delete $self->{CELLS} ; 
-# Todo: must call all set functions! and delete? functions?
+# Todo: must call all set functions! and delete? functions? !!!!
 }
 
 sub EXISTS   
