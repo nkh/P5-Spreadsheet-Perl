@@ -1167,7 +1167,7 @@ Spreadsheet::Perl functionality:
 
 =item * Automatic formula offsetting
 
-=item * Insertion of rows and columns (with some limitation)
+=item * Insertion of rows and columns (doesn't support interspreadsheet formulas)
 
 =item * Relative and fixed cell addresses
 
@@ -1179,7 +1179,7 @@ Spreadsheet::Perl functionality:
 
 =back
 
-Look at the 'examples' directory for some examples.
+Lots of examples in the 'examples' directory.
 
 =head1 DRIVING FORCE
 
@@ -1218,9 +1218,7 @@ I want B<Spreadsheets::Perl> to:
 
 =over 2
 
-=item * Be Perl, be only Perl
-
-=item * Be easy to develop, I try to implement nothing that is already there
+=item * Be very Perlish
 
 =item * Be easy to expand
 
@@ -1306,19 +1304,14 @@ spreadsheet functions are accessed through the tied object.
 
 =head2 insertion and deletion of rows and columns
 
-#TODO: complete this section
-# list the APIs and show examples
+Right now, SS::P will B<ONLY> properly handle insertion/deletion
+within a single spreadsheet. That is, if you have multiply linked
+spreadsheets, do not use insertion/deletion. This is B<not> automatically checked!
 
-Within a single spreadsheet:
-	- insertion row/col
-	- deletion row/col
-	* dependent still broken
+This is a temporary limitation and it will be removed.
 
-Inter spreadsheet:
-	* insertion row/col
-	* deletion row/col
-	* dependent still broken
-
+If you use a spreadsheet that does not reference another spreadsheet, using
+insertion/deletion will update Perl formulas and dependencies just fine.
 
 =head2 dumping a spreadsheet
 
