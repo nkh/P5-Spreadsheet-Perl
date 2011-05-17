@@ -40,19 +40,14 @@ my $separator = '-' x 60 ;
 
 my $dump = $separator ;
 $dump .= "\n$title\n";
-$dump .= "$ss " ;
-
-if(defined $ss->{NAME})
-	{
-	$dump .= "'$ss->{NAME}'" ;
-	}
-
-$dump .= "Dependent stack:\n" ;
+$dump .= $ss->GetName() ." dependent stack\n" ;
 $dump .= "$separator\n" ;
 
 for my $dependent (@{$ss->{DEPENDENT_STACK}})
 	{
-	my ($spreadsheet, $address, $name) = @$dependent ;
+	my ($spreadsheet, $address) = @$dependent ;
+	my $name = $spreadsheet->GetName() ;
+
 	my $formula = '' ;
 	
 	if(exists $spreadsheet->{CELLS}{$address}{GENERATED_FORMULA})

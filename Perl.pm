@@ -137,9 +137,11 @@ if($address =~ /(.*)\.(.+)/)
 my $original_address = $address ;
 my $ss_reference ;
 
+print "$address\n" ;
 my ($cell_or_range, $is_cell, $start_cell, $end_cell) = $self->CanonizeAddress($address) ;
 
 ($ss_reference, $address) = $self->GetSpreadsheetReference($cell_or_range) ;
+print "$self $ss_reference $cell_or_range\n" ;
 
 if(defined $ss_reference)
 	{
@@ -204,7 +206,7 @@ if($is_cell)
 	{
 	my ($value, $evaluation_ok, $evaluation_type, $evaluation_data) ;
 	
-	#trigger
+	# user defined trigger
 	if(exists $self->{DEBUG}{FETCH_TRIGGER}{$start_cell})
 		{
 		if('CODE' eq ref $self->{DEBUG}{FETCH_TRIGGER}{$start_cell})
@@ -220,7 +222,7 @@ if($is_cell)
 			else
 				{
 				my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
-				print $dh "Fetching cell '$start_cell'.\n" ;
+				print $dh "Fetching cell '$start_cell' (no fetch trigger handler set)\n" ;
 				}
 			}
 		}
@@ -235,35 +237,32 @@ if($is_cell)
 			}
 		else
 			{
-			if($self->{DEBUG}{FETCHED})
-				{
-				$current_cell->{FETCHED}++ ;
-				}
+			$current_cell->{FETCHED}++ if($self->{DEBUG}{FETCHED}) ;
 				
 			# circular dependency checking
 			if(exists $current_cell->{CYCLIC_FLAG})
 				{
+				my $name = $self->GetName() ;
+
 				if(exists $self->{DEPENDENCY_STACK})
 					{
 					my $level = '   ' x $self->{DEPENDENCY_STACK_LEVEL} ; 
 					$self->{DEPENDENCY_STACK_LEVEL}++ ;
 
-					my $name = ($self->GetName() || "$self") . '!' ;
-
-					push @{$self->{DEPENDENCY_STACK}}, "$level#CYCLIC $name$start_cell" ;
+					push @{$self->{DEPENDENCY_STACK}}, "$level#CYCLIC $name!$start_cell" ;
 					}
 
 				my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
 				
-				push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell, $self->GetName()] ;
-				print $dh $self->DumpDependentStack("Cyclic dependency while fetching '$start_cell'") ;
+				push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell] ;
+				print $dh $self->DumpDependentStack("Cyclic dependency while fetching '$name!$start_cell'") ;
 				
 				my @dump ;
 
 				for my $dependent (@{$self->{DEPENDENT_STACK}})
 					{
-					my ($spreadsheet, $address, $name) = @$dependent ;
-					push @dump, "$name!$address" ;
+					my ($spreadsheet, $address) = @$dependent ;
+					push @dump, $spreadsheet->GetName() . '!' . $address ;
 					}
 
 				pop @{$self->{DEPENDENT_STACK}} ;
@@ -281,25 +280,19 @@ if($is_cell)
 				my $level = '   ' x $self->{DEPENDENCY_STACK_LEVEL} ; 
 				$self->{DEPENDENCY_STACK_LEVEL}++ ;
 
-				my $name = ($self->GetName() || "$self") . '!' ;
+				my $name = $self->GetName() ;
 
-				my $formula = '' ;
+				my $formula = exists $current_cell->{PERL_FORMULA}
+									? ': ' . $current_cell->{GENERATED_FORMULA}
+									: exists $current_cell->{FORMULA}
+										? ': ' . $current_cell->{GENERATED_FORMULA}
+										: '' ;
 
-				if(exists $current_cell->{PERL_FORMULA})
-					{
-					$formula = ': ' . $current_cell->{GENERATED_FORMULA} ;
-					}
-
-				if(exists $current_cell->{FORMULA})
-					{
-					$formula = ': ' . $current_cell->{GENERATED_FORMULA} ;
-					}
-
-				push @{$self->{DEPENDENCY_STACK}}, "$level$name$start_cell$formula" ;
+				push @{$self->{DEPENDENCY_STACK}}, "$level$name!$start_cell$formula" ;
 				}
 
 			$self->FindDependent($current_cell, $start_cell) ;
-			push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell, $self->GetName()] ;
+			push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell] ;
 			
 			if($self->{DEBUG}{DEPENDENT_STACK_ALL} || $self->{DEBUG}{DEPENDENT_STACK}{$start_cell})
 				{
@@ -473,7 +466,7 @@ if($is_cell)
 		
 			if($self->{DEBUG}{DEPENDENT_STACK_ALL} || $self->{DEBUG}{DEPENDENT_STACK}{$start_cell})
 				{
-				push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell, $self->GetName()] ;
+				push @{$self->{DEPENDENT_STACK}}, [$self, $start_cell] ;
 				
 				my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
 				print $dh $self->DumpDependentStack("Fetching '" . $self->GetName() . "!$start_cell' (virtual cell)") ;
@@ -706,7 +699,8 @@ for my $current_address ($self->GetAddressList($address))
 	if($value_is_valid)
 		{
 		$self->MarkDependentForUpdate($current_cell, $address) ;
-		$self->InvalidateCellInDependent($current_address) ;
+
+		$self->InvalidateCellInDependent($self->GetName() . '!' . $current_address) ;
 
 		$current_cell->{DEFINED_AT} = [caller] if(exists $self->{DEBUG}{DEFINED_AT}) ;
 		
@@ -903,7 +897,7 @@ $level ||= 1 ;
 
 return unless exists $current_cell->{DEPENDENT} ;
 
-push @{$self->{DEPENDENT_STACK}}, [$self, $cell_name, $self->GetName()] ;
+push @{$self->{DEPENDENT_STACK}}, [$self, $cell_name] ;
 
 if(exists $current_cell->{CYCLIC_FLAG})
 	{
@@ -917,56 +911,37 @@ if(exists $current_cell->{CYCLIC_FLAG})
 
 $current_cell->{CYCLIC_FLAG}++ ;
 
+if($level == 1 && (exists $self->{DEBUG}{MARK_ALL_DEPENDENT} || exists $self->{DEBUG}{MARK_DEPENDENT}{$cell_name}))
+  {
+  my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+  my $full_cell_name = $self->GetName() . '!' . $cell_name ; 
+  print $dh "Marking dependents for update at cell: $full_cell_name\n" ;
+  }
+
 for my $dependent_name (keys %{$current_cell->{DEPENDENT}})
 	{
-	if($level == 1 && (exists $self->{DEBUG}{MARK_ALL_DEPENDENT} || exists $self->{DEBUG}{MARK_DEPENDENT}{$cell_name}))
-		{
-		my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
-		my $spreadsheet_name = $self->GetName() || "$self" ;
-		print $dh "$spreadsheet_name: '$cell_name' updated\n" ;
-		}
-
 	my $dependent = $current_cell->{DEPENDENT}{$dependent_name}{DEPENDENT_DATA} ;
-	my ($spreadsheet, $cell_name) = @$dependent ;
+	my ($dependent_spreadsheet, $dependent_cell_name) = @$dependent ;
 	
-	if(exists $spreadsheet->{CELLS}{$cell_name})
+	if(exists $dependent_spreadsheet->{CELLS}{$dependent_cell_name})
 		{
-		if(exists $current_cell->{CACHE} && $current_cell->{CACHE} == 0)
+		$dependent_spreadsheet->{CELLS}{$dependent_cell_name}{NEED_UPDATE}++ ;
+
+		if(exists $self->{DEBUG}{MARK_ALL_DEPENDENT} || exists $self->{DEBUG}{MARK_DEPENDENT}{$cell_name})
 			{
-			$spreadsheet->{CELLS}{$cell_name}{NEED_UPDATE}++ ;
-			
-			if(exists $self->{DEBUG}{MARK_ALL_DEPENDENT} || exists $self->{DEBUG}{MARK_DEPENDENT}{$cell_name})
-				{
-				my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
-				my $spreadsheet_name = $self->GetName() || "$self" ;
-				print $dh ('   ' x $level) . "$spreadsheet_name: '$cell_name' needs update\n" ;
-				}
-			
-			$spreadsheet->MarkDependentForUpdate($spreadsheet->{CELLS}{$cell_name}, $cell_name, $level+1) ;
+			my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+			my $full_dependent_cell_name = $dependent_spreadsheet->GetName() . '!' . $dependent_cell_name ; 
+			print $dh ('   ' x $level) . "$full_dependent_cell_name needs update\n" ;
 			}
-		else
-			{
-			if(exists $spreadsheet->{CELLS}{$cell_name}{FETCH_SUB})
-				{
-				$spreadsheet->{CELLS}{$cell_name}{NEED_UPDATE}++ ;
-				
-				if(exists $self->{DEBUG}{MARK_ALL_DEPENDENT} || exists $self->{DEBUG}{MARK_DEPENDENT}{$cell_name})
-					{
-					my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
-					my $spreadsheet_name = $spreadsheet->GetName() || "$self" ;
-					print $dh ('   ' x $level) . "$spreadsheet_name: '$cell_name' needs update\n" ;
-					}
-				$spreadsheet->MarkDependentForUpdate($spreadsheet->{CELLS}{$cell_name}, $cell_name, $level+1) ;
-				}
-			else
-				{
-				delete $current_cell->{DEPENDENT}{$dependent_name} ;
-				}
-			}
+
+		$dependent_spreadsheet->MarkDependentForUpdate($dependent_spreadsheet->{CELLS}{$dependent_cell_name}, $dependent_cell_name, $level+1) ;
 		}
 	else
 		{
-		delete $current_cell->{DEPENDENT}{$dependent_name} ;
+		my $full_cell_name = $self->GetName() . '!' . $cell_name ; 
+		my $full_dependent_cell_name = $dependent_spreadsheet->GetName() . '!' . $dependent_cell_name ; 
+
+		die "#:SS:P at $full_cell_name depend $full_dependent_cell_name does't exist"  ;
 		}
 	}
 
@@ -980,18 +955,15 @@ delete $current_cell->{CYCLIC_FLAG} ;
 sub InvalidateCellInDependent
 {
 
-my ($self, $cell_address) = @_ ;
+my ($self, $dependent_name) = @_ ;
 
-my $dependent_name = $self->GetName() . '!' . $cell_address ;
+#TODO: also invalidate in all known spreadsheets
 
 for my $current_address ($self->GetCellList())
 	{
 	if(exists $self->{CELLS}{$current_address}{DEPENDENT})
 		{
-		if(exists $self->{CELLS}{$current_address}{DEPENDENT}{$dependent_name})
-			{
-			delete $self->{CELLS}{$current_address}{DEPENDENT}{$dependent_name} ;
-			}
+		delete $self->{CELLS}{$current_address}{DEPENDENT}{$dependent_name} ;
 		}
 	}
 }
@@ -1005,25 +977,21 @@ my $address = shift ;
 
 for my $current_address ($self->GetAddressList($address))
 	{
+	my $delete_cell = 1 ;
+
 	if(exists $self->{CELLS}{$current_address}{DELETE_SUB})
 		{
-		if($self->{CELLS}{$current_address}{DELETE_SUB}->($self, $current_address, @{$self->{CELLS}{$current_address}{DELETE_SUB_ARGS}}))
-			{
-			$self->MarkDependentForUpdate($self->{CELLS}{$current_address}, $current_address) ;
-
-			$self->InvalidateCellInDependent($current_address) ;
-
-			delete $self->{CELLS}{$current_address} ;
-			}
+		$delete_cell = $self->{CELLS}{$current_address}{DELETE_SUB}->($self, $current_address, @{$self->{CELLS}{$current_address}{DELETE_SUB_ARGS}}) ;
 		}
-	else
-		{
-		$self->MarkDependentForUpdate($self->{CELLS}{$current_address}, $current_address) ;
-		
-		$self->InvalidateCellInDependent($current_address) ;
 
-		delete $self->{CELLS}{$current_address} ;
-		}
+  if($delete_cell)
+	  {
+	  $self->MarkDependentForUpdate($self->{CELLS}{$current_address}, $current_address) ;
+
+	  $self->InvalidateCellInDependent($self->GetName() . '!' . $current_address) ;
+
+	  delete $self->{CELLS}{$current_address} ;
+	  }
 	}
 }
 
@@ -1038,8 +1006,9 @@ delete $self->{CELLS} ;
 
 sub EXISTS   
 {
-my $self    = shift ;
-my $address = shift ;
+my ($self, $address) = @_ ; 
+
+# Check fot the existance of a cell or all the cells in a range
 
 for my $current_address ($self->GetAddressList($address))
 	{

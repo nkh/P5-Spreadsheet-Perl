@@ -1,12 +1,12 @@
 Spreadsheet::Perl
 =================
 
-insert_rows_columns works only in the same spreadsheet
-	this can be fixed though, Recalc and use dependents to modify
-	inter spreadsheet formulas
+implement a GetAllDependencies that returnd a data structure
 
-deletion of cell should update the dependent list
-	in inter spreadsheet too
+insert_rows_columns inter  spreadsheet
+	dependent updating subs to work on inter spreadsheet
+
+deletion of cell should update the dependent list in inter spreadsheet
 
 insert_rows_columns check formulas to see if they are inlclusive in the
 	insertion range. should they check for intersection as Delete_column does?
@@ -15,7 +15,7 @@ subs checking if a cell or range is contained or intersect with another range MU
 
 Named cells in insertion/deletion
 
-tests for col/row insertion
+tests for col/row insertion/deletion as well as dependency and dependent list
 
 if a cell contains a formula calculation error (#ERROR, #REF, ..) 
 	should Sum ingnore it or return an error (better is a value telling
@@ -32,12 +32,12 @@ code is not documented making the API difficult to grasp and use
 find a way to move the examples to tests
 
 function to show cell dependencies
-	in a tree mode with formulas, based on get dependencies. also show the cell	names if any
+	show the cell	names 
 
 verification at load time of the formulas could be optional
 
 factorize formula code in STORE/FETCH, is it needed in STORE?
-	=> needed, exqmple in error directory
+	=> needed, example in error directory
 
 default file format should be perl, writable too (dump streamer?)
 
@@ -56,14 +56,15 @@ DBI interface
 
 R1C1 reference in formulas => $ss{"+1,-3"}
 
-Insertion of rows and columns (=> inter spreadsheet formulas !!)
 Sorting (=> formulas !!)
 	option to invalidate all formulas containing a ref to the deleted row ...
 
 Generate graphs, pies, ..
+	generic mechanism to handle output fron cell that is not text
 
 Composite initialisation type? Composite(PerlFormula(), 7, Format(), ....) ;
-Clear(FORMULA, VALUE, FORMAT, ALL) ;
+	Clear(FORMULA, VALUE, FORMAT, ALL) ;
+
 
 perl debugger support/triggers
 
