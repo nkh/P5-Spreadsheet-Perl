@@ -112,6 +112,7 @@ return
 			} ;
 			
 		my $result = eval "#line " . __LINE__ . " formula_eval\n$formula" ;
+		
 			
 		if($@)
 			{

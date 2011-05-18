@@ -277,6 +277,12 @@ my @addresses ;
 for my $address (@addresses_definition)
 	{
 	my $spreadsheet = '' ;
+	if($address =~ /^([A-Z]+!)(.+)/)
+		{
+		$spreadsheet = $1 ;
+		$address = $2 ;
+		}
+		
 	
 	my ($address, $is_cell, $start_cell, $end_cell) = $self->CanonizeAddress($address) ;
 	
@@ -324,16 +330,10 @@ for my $address (@addresses_definition)
 		
 	if($is_cell)
 		{
-		push @addresses, $start_cell ;
+		push @addresses, $spreadsheet . $start_cell ;
 		}
 	else
 		{
-		if($address =~ /^([A-Z]+!)(.+)/)
-			{
-			$spreadsheet = $1 ;
-			$address = $2 ;
-			}
-			
 		my ($start_x, $start_y) = ConvertAdressToNumeric($start_cell) ;
 		my ($end_x, $end_y) = ConvertAdressToNumeric($end_cell) ;
 		
@@ -364,13 +364,13 @@ for my $address (@addresses_definition)
 				push @addresses, $spreadsheet . ConvertNumericToAddress($x, $y) ;
 				}
 			}
-
-		if($self->{DEBUG}{ADDRESS_LIST})
-			{
-			my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
-			print $dh "GetAddressList '$address': " 
-				. (join ' - ', @addresses) . "\n"
-			}
+		}
+		
+	if($self->{DEBUG}{ADDRESS_LIST})
+		{
+		my $dh = $self->{DEBUG}{ERROR_HANDLE} ;
+		print $dh "GetAddressList '$spreadsheet$address': " 
+			. (join ', ', @addresses) . "\n"
 		}
 	}
 	

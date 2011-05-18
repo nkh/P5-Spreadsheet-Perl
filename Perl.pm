@@ -137,11 +137,9 @@ if($address =~ /(.*)\.(.+)/)
 my $original_address = $address ;
 my $ss_reference ;
 
-print "$address\n" ;
 my ($cell_or_range, $is_cell, $start_cell, $end_cell) = $self->CanonizeAddress($address) ;
 
 ($ss_reference, $address) = $self->GetSpreadsheetReference($cell_or_range) ;
-print "$self $ss_reference $cell_or_range\n" ;
 
 if(defined $ss_reference)
 	{
