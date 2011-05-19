@@ -6,6 +6,10 @@ README
 test.pl
 Todo.txt
 
+Perl/Heavy/Fetch.pm
+Perl/Heavy/Store.pm
+Perl/Heavy/Dependent.pm
+
 Perl/Address.pm
 Perl/Arithmetic.pm
 Perl/ASCIITable.pm
@@ -28,10 +32,13 @@ Perl/Validator.pm
 
 t/test_template
 t/0100_perl_formula.t
+t/090_address.t
 
 examples/ref2.pl
+examples/insertion_rows_columns_dependent_need_update.pl
 examples/ascii_table2.pl
 examples/create_setup.pl
+examples/insertion_rows_columns.pl
 examples/Address_test.pl
 examples/read_write.pl
 examples/delete_row.gnumeric
@@ -41,13 +48,20 @@ examples/ss_setup.pl
 examples/row_column_star.pl
 examples/dump_html.pl
 examples/cache.pl
+examples/hash_through_reference_need_error.pl
+examples/deletion_rows.pl
+examples/error_propagation.pl
 examples/triggers.pl
+examples/dependencies.pl
 examples/html_dump.html
 examples/attributes.pl
 examples/sort.pl
 examples/fetch_function.pl
 examples/ss_data.pl
+examples/address_within_range.pl
+examples/dumptable_auto_recalculate.pl
 examples/debug.pl
+examples/address_offset_within_range.pl
 examples/function_definition.pl
 examples/user_data.pl
 examples/format.pl
@@ -58,6 +72,7 @@ examples/ref.pl
 examples/address_manipulation.pl
 examples/debug_from_formula.pl
 examples/formula_relocating.pl
+examples/deletion_columns.pl
 examples/tie.pl
 examples/perl_formula.pl
 examples/store_function.pl
@@ -67,7 +82,12 @@ examples/prima.pl
 examples/ascii_table.pl
 examples/query_set.pl
 examples/inter_spreadsheet.pl
+examples/dependencies2.pl
+examples/dependencies3.pl
+examples/dependencies4.pl
+examples/dependencies5.pl
 examples/formula.pl
+examples/deletion_dependent_need_update.pl
 examples/validator.pl
 examples/name_and_lock.pl
 examples/work.pl

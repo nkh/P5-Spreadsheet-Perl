@@ -374,6 +374,29 @@ else
 
 #-------------------------------------------------------------------------------
 
+sub GetAllDependencies
+{
+my ($self, $cell_address, $do_not_use_cache) = @_ ;
+
+# DEPENDENCY_STACK will hold the address of all the 
+# cells accessed while accessing $cell_address
+$self->{DEPENDENCY_STACK} = [] ;
+$self->{DEPENDENCY_STACK_LEVEL} = -1 ;
+$self->{DEPENDENCY_STACK_NO_CACHE}++ if $do_not_use_cache ;
+
+$self->Get($cell_address) ;
+
+my $all_dependencies = $self->{DEPENDENCY_STACK} ;
+
+delete $self->{DEPENDENCY_STACK} ;
+delete $self->{DEPENDENCY_STACK_LEVEL} ;
+delete $self->{DEPENDENCY_STACK_NO_CACHE} ;
+
+return $all_dependencies ;
+}
+
+#-------------------------------------------------------------------------------
+
 1 ;
 
 __END__

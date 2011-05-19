@@ -47,7 +47,8 @@ $ss{A9} = PerlFormula(' oops! no perl') ;
 
 lives_ok
 	{
-	is($ss{A9}, '#error', 'perl formula error') or diag $ss->DumpTable() ; 
+	like($ss{A9}, qr/#ERROR \(syntax error /, 'perl formula error') or diag $ss->DumpTable() ; 
+	#~ is($ss{A9}, '#error', 'perl formula error') or diag $ss->DumpTable() ; 
 	} 'SS:P Caught eval exception' ;
 }
 
