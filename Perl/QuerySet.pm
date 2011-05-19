@@ -316,9 +316,16 @@ if($is_cell)
 		if(exists $self->{CELLS}{$address}{PERL_FORMULA})
 			{
 			# definition line?
+			my $opf = $self->{CELLS}{$address}{PERL_FORMULA}[1] ;
+			$opf = "\n$opf" if $opf =~ /\n/ ;
+			$opf =~ s/\t/   /gsm ;
 			
-			$cell_info .= "OPF: " . $self->{CELLS}{$address}{PERL_FORMULA}[1] . " =>\n" if $self->{DEBUG}{PRINT_ORIGINAL_FORMULA} ;
-			$cell_info .= "PF: " . $self->{CELLS}{$address}{GENERATED_FORMULA}  . "\n" ;
+			my $pf = $self->{CELLS}{$address}{GENERATED_FORMULA} ;
+			$pf = "\n$pf" if $pf =~ /\n/ ;
+			$pf =~ s/\t/   /gsm ;
+			
+			$cell_info .= "OPF: $opf =>\n" if $self->{DEBUG}{PRINT_ORIGINAL_FORMULA} ;
+			$cell_info .= "PF: $pf\n" ;
 			}
 			
 		if(exists $self->{CELLS}{$address}{FETCH_SUB_INFO})
@@ -330,7 +337,7 @@ if($is_cell)
 			{
 			if($self->{DEBUG}{PRINT_DEPENDENT_LIST})
 				{
-				for(keys %{$self->{CELLS}{$address}{DEPENDENT}})
+				for(sort keys %{$self->{CELLS}{$address}{DEPENDENT}})
 					{
 					$cell_info .= "dependent: $_\n" ;
 					}
