@@ -9,6 +9,9 @@ use Spreadsheet::Perl::Arithmetic ;
 my $romeo = tie my %romeo, "Spreadsheet::Perl", NAME => 'ROMEO' ;
 $romeo->{DEBUG}{INLINE_INFORMATION}++ ;
 $romeo->{DEBUG}{PRINT_DEPENDENT_LIST}++ ;
+#~ $romeo->{DEBUG}{ADDRESS_LIST}++ ;
+#~ $romeo->{DEBUG}{OFFSET_ADDRESS}++ ;
+$romeo->{DEBUG}{INSERT_DELETE}++ ;
 
 #$romeo->label_column('B' => 'C-B') ;
 #$romeo->label_row(3 => 'row-3') ;
@@ -27,10 +30,10 @@ print $romeo->DumpTable() ;
 $romeo->InsertColumns('B', 2) ;
 print $romeo->DumpTable() ;
 
-#$romeo->{DEBUG}{MARK_ALL_DEPENDENT}++ ;
-#delete $romeo{A5} ;
-#
-#print $romeo->DumpTable() ;
+
+#~ $romeo->{DEBUG}{MARK_ALL_DEPENDENT}++ ;
+#~ delete $romeo{A5} ;
+#~ print $romeo->DumpTable() ;
 
 $romeo->DeleteColumns('B', 1) ;
 print $romeo->DumpTable() ;

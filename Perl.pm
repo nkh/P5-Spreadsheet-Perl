@@ -21,7 +21,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 our @EXPORT ;
 push @EXPORT, qw( Reset ) ;
 
-our $VERSION = '0.12' ;
+our $VERSION = '0.13' ;
 
 use Spreadsheet::Perl::Address ;
 use Spreadsheet::Perl::Cache ;
@@ -608,6 +608,12 @@ my $self    = shift ;
 my $address = shift ;
 my $value   = shift ;
 
+
+# when inserting and deleting, dependents are update so 
+# the minimum amout of recalculations are done
+# still this sub is called to set different fields in the cell
+my $do_not_mark_dependents_for_update = shift ; 
+
 # inter spreadsheets references
 my $original_address = $address ;
 my $ss_reference ;
@@ -702,7 +708,7 @@ for my $current_address ($self->GetAddressList($address))
 		
 	if($value_is_valid)
 		{
-		$self->MarkDependentForUpdate($current_cell, $address) ;
+		$self->MarkDependentForUpdate($current_cell, $address) unless $do_not_mark_dependents_for_update ;
 
 		$self->InvalidateCellInDependent($self->GetName() . '!' . $current_address) ;
 
@@ -945,7 +951,7 @@ for my $dependent_name (keys %{$current_cell->{DEPENDENT}})
 		my $full_cell_name = $self->GetName() . '!' . $cell_name ; 
 		my $full_dependent_cell_name = $dependent_spreadsheet->GetName() . '!' . $dependent_cell_name ; 
 
-		die "#:SS:P at $full_cell_name depend $full_dependent_cell_name does't exist"  ;
+		die "Marking dependents for update at $full_cell_name depend $full_dependent_cell_name does't exist"  ;
 		}
 	}
 
@@ -1157,7 +1163,7 @@ Spreadsheet::Perl functionality:
 
 =item * Automatic formula offsetting
 
-=item * Insertion of rows and columns (doesn't support interspreadsheet formulas)
+=item * Insertion and deletion of rows and columns
 
 =item * Relative and fixed cell addresses
 
@@ -1201,20 +1207,6 @@ visual programming but still fit spreadsheets as they are often GUI based)
 =item * SP allows for user customization 
 
 =back
-
-=head2 How
-
-I want B<Spreadsheets::Perl> to:
-
-=over 2
-
-=item * Be very Perlish
-
-=item * Be easy to expand
-
-=item * Be easy to use for Perl programmers
-
-=back 
 
 =head1 CREATING A SPREADSHEET
 
@@ -1294,14 +1286,8 @@ spreadsheet functions are accessed through the tied object.
 
 =head2 insertion and deletion of rows and columns
 
-Right now, SS::P will B<ONLY> properly handle insertion/deletion
-within a single spreadsheet. That is, if you have multiply linked
-spreadsheets, do not use insertion/deletion. This is B<not> automatically checked!
 
-This is a temporary limitation and it will be removed.
 
-If you use a spreadsheet that does not reference another spreadsheet, using
-insertion/deletion will update Perl formulas and dependencies just fine.
 
 =head2 dumping a spreadsheet
 
@@ -2460,10 +2446,10 @@ The handle can be used from withing formulas if necessary:
 I don't removes the flags I create while developing B<Spreadsheet::Perl> if I think it can be useful to the user (that's me at least).
 The following flags exist:
 
-  # display all the cell offset computation and some header for 
-  # SS::P operations. A heavy weight flag you will hopefully not use
-  $ss->{DEBUG}{OFFSET_ADDRESS}++ ; 
+  # low level flag you will hopefully not use
   
+  # display all the cell offset computation and some header for 
+  $ss->{DEBUG}{INSERT_DELETE}++ ; # display lots of information on insert/delete
 
   $ss->{DEBUG}{SUB}++ ; # show whenever a value has to be calculated
   $ss->{DEBUG}{FETCHED}++ ; # counts how many times the cell is fetched

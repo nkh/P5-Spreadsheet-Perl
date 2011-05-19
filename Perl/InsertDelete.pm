@@ -39,10 +39,10 @@ my ($self, $start_row, $number_of_rows_to_insert) = @_ ;
 
 confess "Invalid row '$start_row'\n" unless $start_row =~ /^\s*\d+\s*$/ ;
 
-if($self->{DEBUG}{OFFSET_ADDRESS})
+if($self->{DEBUG}{INSERT_DELETE})
 	{
 	print "-------------------------------------------------------------------\n" ;
-	print "Inserting rows in " . $self->GetName() . "\n" ;
+	print "Inserting rows in " . $self->GetName() . " $start_row, $number_of_rows_to_insert\n" ;
 	print "-------------------------------------------------------------------\n" ;
 	}
 
@@ -79,7 +79,7 @@ for my $row (reverse sort keys %moved_cell_list)
 			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999", $self) ;
 			}
 
-		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
+		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;		
 		delete $self->{CELLS}{$cell_address} ;
 		}
 	}
@@ -119,39 +119,6 @@ for my $row_header (reverse SortCells grep {/^@/} $self->GetCellHeaderList())
 }
 
 
-sub UpdateOtherSpreadsheet
-{
-my ($self, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range) = @_ ;
-
-if($self->{DEBUG}{OFFSET_ADDRESS})
-	{
-	print "-------------------------------------------------------------------\n" ;
-	print "Updating other spreadsheets after modification to " . $self->GetName() . "\n" ;
-	print "-------------------------------------------------------------------\n" ;
-	}
-
-for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
-	{
-	for my $other_cell ($other_spreadsheet->GetCellList())
-		{
-		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
-			{
-			$other_spreadsheet->OffsetDependents($self, $other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range) ;
-			}
-		}
-			
-	for my $other_cell ($other_spreadsheet->GetCellList())
-		{
-		if(exists $other_spreadsheet->{CELLS}{$other_cell}{GENERATED_FORMULA})
-			{
-			$other_spreadsheet->OffsetFormula($other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range, $self) ;
-			}
-		}
-	}
-	
-print "-------------------------------------------------------------------\n\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
-}
-
 #-------------------------------------------------------------------------------------------------------
 
 sub InsertColumns
@@ -160,10 +127,10 @@ my ($self, $start_column, $number_of_columns_to_insert) = @_ ;
 
 confess "Invalid '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
 
-if($self->{DEBUG}{OFFSET_ADDRESS})
+if($self->{DEBUG}{INSERT_DELETE})
 	{
 	print "-------------------------------------------------------------------\n" ;
-	print "Inserting columns in " . $self->GetName() . "\n" ;
+	print "Inserting columns in " . $self->GetName() . " $start_column, $number_of_columns_to_insert\n" ;
 	print "-------------------------------------------------------------------\n" ;
 	}
 
@@ -250,6 +217,41 @@ for my $column_header (reverse SortCells grep {/^[A-Z]+0$/} $self->GetCellHeader
 
 #-------------------------------------------------------------------------------
 
+sub UpdateOtherSpreadsheet
+{
+my ($self, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range) = @_ ;
+
+for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
+	{
+	if($self->{DEBUG}{INSERT_DELETE})
+		{
+		print "-------------------------------------------------------------------\n" ;
+		print "Updating " . $other_spreadsheet->GetName() . " after modification to " . $self->GetName() . "\n" ;
+		print "-------------------------------------------------------------------\n" ;
+		}
+
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
+			{
+			$other_spreadsheet->OffsetDependents($self, $other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range) ;
+			}
+		}
+			
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{GENERATED_FORMULA})
+			{
+			$other_spreadsheet->OffsetFormula($other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range, $self) ;
+			}
+		}
+	}
+	
+print "-------------------------------------------------------------------\n\n" if($self->{DEBUG}{INSERT_DELETE}) ;
+}
+
+#-------------------------------------------------------------------------------
+
 sub OffsetFormula
 {
 my 
@@ -260,14 +262,14 @@ my
 	$range, $dependency_spreadsheet
 	)  = @_ ;
 
-print 'Updating ' . $self->GetName() . "!$cell_address formula\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
-
 return unless exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ;
 
 my $formula = $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ; 
-$formula =~ s/(([A-Za-z_0-9]+!)?\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$self->OffsetAddress($1, $columns_to_insert, $rows_to_insert, $range, $dependency_spreadsheet)/eg ;
+(my $new_formula = $formula) =~ s/(([A-Za-z_0-9]+!)?\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$self->OffsetAddress($1, $columns_to_insert, $rows_to_insert, $range, $dependency_spreadsheet)/eg ;
 
-$self->Set($cell_address, PF($formula)) ;
+print 'Updating ' . $self->GetName() . "!$cell_address formula: $formula => $new_formula\n" if($self->{DEBUG}{INSERT_DELETE}) ;
+
+$self->Set($cell_address, PF($new_formula), 1)  if $new_formula ne $formula ;
 }
 
 
@@ -284,8 +286,6 @@ my
 	$range
 	)  = @_ ;
 
-print 'Updating ' . $self->GetName() . "!$cell_address dependents\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
-
 return unless exists $self->{CELLS}{$cell_address}{DEPENDENT} ;
 
 my $dependents = $self->{CELLS}{$cell_address}{DEPENDENT} ; 
@@ -301,6 +301,8 @@ for my $dependent_name (keys %{$dependents})
 	next if $spreadsheet != $dependent_spreadsheet ; 
 	
 	my $spreadsheet_name = $spreadsheet->GetName() ;
+
+	print 'Updating ' . $self->GetName() . "!$cell_address dependent $spreadsheet_name!$cell_name\n" if($self->{DEBUG}{INSERT_DELETE}) ;
 
 	my $new_cell_name = $self->OffsetAddress("$spreadsheet_name!$cell_name", $columns_to_insert, $rows_to_insert, $range, $dependent_spreadsheet) ;
 
@@ -339,12 +341,14 @@ for my $dependent_name (keys %{$dependents})
 
 	if($self->is_within_range($cell_name, $range))
 		{
-		print "Deleting dependents $dependent_name at " . $self->GetName() . "!$cell_address\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
+		print "Deleting dependents $dependent_name at " . $self->GetName() . "!$cell_address\n" if($self->{DEBUG}{INSERT_DELETE}) ;
 		
 		delete $dependents->{$dependent_name} ;
 		}
 	}
 }
+
+#-------------------------------------------------------------------------------
 
 sub DeleteDependentsInOtherSpreadsheets
 {
@@ -352,6 +356,14 @@ my ($self, $range) = @_ ;
 	
 for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
 	{
+		
+	if($self->{DEBUG}{INSERT_DELETE})
+		{
+		print "-------------------------------------------------------------------\n" ;
+		print "Deleting dependents in " . $other_spreadsheet->GetName() . " after modification to " . $self->GetName() . "\n" ;
+		print "-------------------------------------------------------------------\n" ;
+		}
+		
 	for my $other_cell ($other_spreadsheet->GetCellList())
 		{
 		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
@@ -368,17 +380,17 @@ sub UpdateOtherSpreadsheetAfterDelete
 {
 my ($self, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $deleted_range, $offset_range) = @_ ;
 
-if($self->{DEBUG}{OFFSET_ADDRESS})
-	{
-	print "-------------------------------------------------------------------\n" ;
-	print "Updating other spreadsheets after modification to " . $self->GetName() . "\n" ;
-	print "-------------------------------------------------------------------\n" ;
-	}
-
 $self->DeleteDependentsInOtherSpreadsheets($deleted_range) ;
 
 for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
 	{
+	if($self->{DEBUG}{INSERT_DELETE})
+		{
+		print "-------------------------------------------------------------------\n" ;
+		print "Updating " . $other_spreadsheet->GetName() . " after modification to " . $self->GetName() . "\n" ;
+		print "-------------------------------------------------------------------\n" ;
+		}
+		
 	for my $other_cell ($other_spreadsheet->GetCellList())
 		{
 		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
@@ -403,7 +415,7 @@ for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
 		}
 	}
 	
-print "-------------------------------------------------------------------\n\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
+print "-------------------------------------------------------------------\n\n" if($self->{DEBUG}{INSERT_DELETE}) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -414,10 +426,10 @@ my ($self, $start_column, $number_of_columns_to_delete) = @_ ;
 
 confess "Invalid '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
 
-if($self->{DEBUG}{OFFSET_ADDRESS})
+if($self->{DEBUG}{INSERT_DELETE})
 	{
 	print "-------------------------------------------------------------------\n" ;
-	print "Deleting columns in " . $self->GetName() . "\n" ;
+	print "Deleting columns in " . $self->GetName() . " $start_column, $number_of_columns_to_delete\n" ;
 	print "-------------------------------------------------------------------\n" ;
 	}
 
@@ -473,7 +485,7 @@ for my $column_index (sort keys %moved_cell_list)
 			{
 			if($self->FormulaReferenceRange($self, $cell_address, "${start_column}1:${end_column}9999")) 
 				{
-				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				$self->Set($cell_address, PF("'#REF [dc]'"), 1) ;
 				}	
 			else
 				{
@@ -509,7 +521,7 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 			{
 			if($self->FormulaReferenceRange($self, $cell_address, "${start_column}1:${end_column}9999")) 
 				{
-				$self->Set($cell_address, PF("'#REF [dc]'")) ;
+				$self->Set($cell_address, PF("'#REF [dc]'"), 1) ;
 				}	
 			else
 				{
@@ -552,10 +564,10 @@ my ($self, $start_row, $number_of_rows_to_delete) = @_ ;
 
 confess "Invalid '$start_row'\n" unless $start_row =~ /^\s*\d+\s*$/ ;
 
-if($self->{DEBUG}{OFFSET_ADDRESS})
+if($self->{DEBUG}{INSERT_DELETE})
 	{
 	print "-------------------------------------------------------------------\n" ;
-	print "Deleting rows in " . $self->GetName() . "\n" ;
+	print "Deleting rows in " . $self->GetName() . " $start_row, $number_of_rows_to_delete\n" ;
 	print "-------------------------------------------------------------------\n" ;
 	}
 
@@ -607,7 +619,7 @@ for my $row (sort keys %moved_cell_list)
 			{
 			if($self->FormulaReferenceRange($self, $cell_address, "A${start_row}:AAAA${end_row}")) 
 				{
-				$self->Set($cell_address, PF("'#REF [dr]'")) ;
+				$self->Set($cell_address, PF("'#REF [dr]'"), 1) ;
 				}	
 			else
 				{
@@ -643,7 +655,7 @@ for my $row (reverse sort keys %not_moved_cell_list)
 			{
 			if($self->FormulaReferenceRange($self, $cell_address, "A${start_row}:AAAA${end_row}")) 
 				{
-				$self->Set($cell_address, PF("'#REF [dr]'")) ;
+				$self->Set($cell_address, PF("'#REF [dr]'"), 1) ;
 				}	
 			else
 				{
@@ -653,7 +665,7 @@ for my $row (reverse sort keys %not_moved_cell_list)
 		}
 	}
 
-$self->UpdateOtherSpreadsheetAfterDelete(0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}1:AAAA${end_row}", "A${start_row}1:AAAA$9999") ;
+$self->UpdateOtherSpreadsheetAfterDelete(0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}1:AAAA${end_row}", "A${start_row}1:AAAA9999") ;
 
 for my $row_header (sort grep {/^@/} $self->GetCellHeaderList())
 	{
