@@ -25,11 +25,26 @@ our $VERSION = '0.03' ;
 
 #-------------------------------------------------------------------------------
 
+# NOTE: When updating cell dependencies and formulas, the dependencies must be updated first
+# as the update of the formulas triggers the marking of the cell dependencies for update
+# which cell to update depends on the dependent list, which must be updated first. if the triggering
+# mechanism finds a dependent that does not exist, and exception is thrown. Be careful to update
+# ALL the dependents before updating any formula
+# triggering the cells should be done only when a cell is deleted, insertion has no effect on single cell
+# dependency but may have on range dependency
+
 sub InsertRows
 {
 my ($self, $start_row, $number_of_rows_to_insert) = @_ ;
 
 confess "Invalid row '$start_row'\n" unless $start_row =~ /^\s*\d+\s*$/ ;
+
+if($self->{DEBUG}{OFFSET_ADDRESS})
+	{
+	print "-------------------------------------------------------------------\n" ;
+	print "Inserting rows in " . $self->GetName() . "\n" ;
+	print "-------------------------------------------------------------------\n" ;
+	}
 
 my (%moved_cell_list, %not_moved_cell_list) ;
 
@@ -54,14 +69,14 @@ for my $row (reverse sort keys %moved_cell_list)
 		{
 		my $new_address = $self->OffsetAddress($cell_address, 0, $number_of_rows_to_insert) ; 
 		
-		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
-			{
-			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
-			}
-
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->OffsetDependents($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+			$self->OffsetDependents($self, $cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+			}
+
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999", $self) ;
 			}
 
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
@@ -76,17 +91,20 @@ for my $row (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$row}})
 		{
-		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
-			{
-			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
-			}
-
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->OffsetDependents($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
+			$self->OffsetDependents($self, $cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
 			}
+			
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, 0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999", $self) ;
+			}
+
 		}
 	}
+
+$self->UpdateOtherSpreadsheet(0, 0, $start_row, $number_of_rows_to_insert, "A$start_row:AAAA9999") ;
 
 for my $row_header (reverse SortCells grep {/^@/} $self->GetCellHeaderList())
 	{
@@ -100,11 +118,54 @@ for my $row_header (reverse SortCells grep {/^@/} $self->GetCellHeaderList())
 	}
 }
 
+
+sub UpdateOtherSpreadsheet
+{
+my ($self, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range) = @_ ;
+
+if($self->{DEBUG}{OFFSET_ADDRESS})
+	{
+	print "-------------------------------------------------------------------\n" ;
+	print "Updating other spreadsheets after modification to " . $self->GetName() . "\n" ;
+	print "-------------------------------------------------------------------\n" ;
+	}
+
+for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
+	{
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
+			{
+			$other_spreadsheet->OffsetDependents($self, $other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range) ;
+			}
+		}
+			
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{GENERATED_FORMULA})
+			{
+			$other_spreadsheet->OffsetFormula($other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $range, $self) ;
+			}
+		}
+	}
+	
+print "-------------------------------------------------------------------\n\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
+}
+
+#-------------------------------------------------------------------------------------------------------
+
 sub InsertColumns
 {
 my ($self, $start_column, $number_of_columns_to_insert) = @_ ;
 
-confess "Invalid w '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
+confess "Invalid '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
+
+if($self->{DEBUG}{OFFSET_ADDRESS})
+	{
+	print "-------------------------------------------------------------------\n" ;
+	print "Inserting columns in " . $self->GetName() . "\n" ;
+	print "-------------------------------------------------------------------\n" ;
+	}
 
 my (%moved_cell_list, %not_moved_cell_list) ;
 
@@ -132,14 +193,14 @@ for my $column_index (reverse sort keys %moved_cell_list)
 		{
 		my $new_address = $self->OffsetAddress($cell_address, $number_of_columns_to_insert, 0) ; 
 		
-		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
-			{
-			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
-			}
-
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->OffsetDependents($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			$self->OffsetDependents($self, $cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999", $self) ;
 			}
 
 		$self->{CELLS}{$new_address} = $self->{CELLS}{$cell_address} ;
@@ -154,17 +215,20 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 	{
 	for my $cell_address (@{$not_moved_cell_list{$column_index}})
 		{
-		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
-			{
-			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
-			}
-
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->OffsetDependents($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			$self->OffsetDependents($self, $cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+			
+		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
+			{
+			$self->OffsetFormula($cell_address, $start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999", $self) ;
 			}
 		}
 	}
+
+$self->UpdateOtherSpreadsheet($start_column, $number_of_columns_to_insert, 0, 0, "${start_column}1:AAAA9999") ;
+
 
 my $start_column_index = FromAA($start_column) ;
 
@@ -193,13 +257,15 @@ my
 	$self, $cell_address,
 	$start_column, $columns_to_insert,
 	$start_row, $rows_to_insert,
-	$range
+	$range, $dependency_spreadsheet
 	)  = @_ ;
+
+print 'Updating ' . $self->GetName() . "!$cell_address formula\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
 
 return unless exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ;
 
 my $formula = $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ; 
-$formula =~ s/(\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$self->OffsetAddress($1, $columns_to_insert, $rows_to_insert, $range)/eg ;
+$formula =~ s/(([A-Za-z_0-9]+!)?\[?[A-Z]+\]?\[?[0-9]+\]?(:\[?[A-Z]+\]?\[?[0-9]+\]?)?)/$self->OffsetAddress($1, $columns_to_insert, $rows_to_insert, $range, $dependency_spreadsheet)/eg ;
 
 $self->Set($cell_address, PF($formula)) ;
 }
@@ -211,11 +277,14 @@ sub OffsetDependents
 {
 my 
 	(
-	$self, $cell_address,
+	$self, $dependent_spreadsheet,
+	$cell_address,
 	$start_column, $columns_to_insert,
 	$start_row, $rows_to_insert,
 	$range
 	)  = @_ ;
+
+print 'Updating ' . $self->GetName() . "!$cell_address dependents\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
 
 return unless exists $self->{CELLS}{$cell_address}{DEPENDENT} ;
 
@@ -226,10 +295,17 @@ my @new_dependents ;
 for my $dependent_name (keys %{$dependents})
 	{
 	my $dependent = $dependents->{$dependent_name} ;
+
 	my ($spreadsheet, $cell_name) = @{$dependent->{DEPENDENT_DATA}} ;
+	
+	next if $spreadsheet != $dependent_spreadsheet ; 
+	
+	my $spreadsheet_name = $spreadsheet->GetName() ;
 
-	my $new_cell_name = $self->OffsetAddress($cell_name, $columns_to_insert, $rows_to_insert, $range) ;
+	my $new_cell_name = $self->OffsetAddress("$spreadsheet_name!$cell_name", $columns_to_insert, $rows_to_insert, $range, $dependent_spreadsheet) ;
 
+	$new_cell_name =~ s/[A-Za-z_0-9]+!// ;
+	
 	$dependent->{DEPENDENT_DATA}[1] = $new_cell_name ;
 	push @new_dependents, $dependent ;
 
@@ -238,19 +314,16 @@ for my $dependent_name (keys %{$dependents})
 
 for my $dependent (@new_dependents)
 	{
-	my $dependent_name = $dependent->{DEPENDENT_DATA}[2] . '!' . $dependent->{DEPENDENT_DATA}[1] ;
+	my $dependent_name = $dependent->{DEPENDENT_DATA}[0]->GetName() . '!' . $dependent->{DEPENDENT_DATA}[1] ;
 	$dependents->{$dependent_name} = $dependent ;
 	}
-
-#TODO check other spreadsheet to see if their dependent list points
-#to this spreadsheet
 }
 
 #-------------------------------------------------------------------------------
 
 sub DeleteDependents
 {
-my ($self, $cell_address, $range) = @_ ;
+my ($self, $cell_address, $range, $dependent_spreadsheet) = @_ ;
 
 # delete any dependent that is within the range
 
@@ -264,6 +337,7 @@ for my $dependent_name (keys %{$dependents})
 	{
 	my $dependent = $dependents->{$dependent_name} ;
 	my ($spreadsheet, $cell_name) = @{$dependent->{DEPENDENT_DATA}} ;
+	next unless $spreadsheet == $dependent_spreadsheet ; 
 
 	if($self->is_within_range($cell_name, $range))
 		{
@@ -282,6 +356,13 @@ sub DeleteColumns
 my ($self, $start_column, $number_of_columns_to_delete) = @_ ;
 
 confess "Invalid '$start_column'\n" unless $start_column =~ /^\s*[A-Z]{1,4}\s*$/ ;
+
+if($self->{DEBUG}{OFFSET_ADDRESS})
+	{
+	print "-------------------------------------------------------------------\n" ;
+	print "Deleting columns in " . $self->GetName() . "\n" ;
+	print "-------------------------------------------------------------------\n" ;
+	}
 
 my $start_column_index = FromAA($start_column) ;
 my $end_column = ToAA($start_column_index + $number_of_columns_to_delete - 1) ;
@@ -317,7 +398,7 @@ for my $column_index (keys %removed_cell_list)
 	{
 	for my $cell_address (@{$removed_cell_list{$column_index}})
 		{
-		$self->DELETE($cell_address) ; # DELETE would call the appropriate callback
+		$self->DELETE($cell_address) ; # DELETE calls user defined callbacks
 		}
 	}
 
@@ -325,6 +406,13 @@ for my $column_index (sort keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$column_index}})
 		{
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
+
+			$self->OffsetDependents($self, $cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
 			if($self->FormulaReferenceRange($cell_address, "${start_column}1:${end_column}9999")) 
@@ -333,15 +421,8 @@ for my $column_index (sort keys %moved_cell_list)
 				}	
 			else
 				{
-				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999", $self) ;
 				}
-			}
-
-		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
-			{
-			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
-
-			$self->OffsetDependents($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
 			}
 
 		my $new_address = $self->OffsetAddress($cell_address, - $number_of_columns_to_delete, 0) ;
@@ -362,6 +443,12 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 		# compiled. Is there a case where DeleteColumns could be called 
 		# before the formula generation?
 		
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
+			$self->OffsetDependents($self, $cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+			}
+			
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
 			if($self->FormulaReferenceRange($cell_address, "${start_column}1:${end_column}9999")) 
@@ -370,14 +457,8 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 				}	
 			else
 				{
-				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
+				$self->OffsetFormula($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999", $self) ;
 				}
-			}
-
-		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
-			{
-			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
-			$self->OffsetDependents($cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
 			}
 		}
 	}
@@ -412,6 +493,13 @@ sub DeleteRows
 my ($self, $start_row, $number_of_rows_to_delete) = @_ ;
 
 confess "Invalid '$start_row'\n" unless $start_row =~ /^\s*\d+\s*$/ ;
+
+if($self->{DEBUG}{OFFSET_ADDRESS})
+	{
+	print "-------------------------------------------------------------------\n" ;
+	print "Deleting rows in " . $self->GetName() . "\n" ;
+	print "-------------------------------------------------------------------\n" ;
+	}
 
 my $end_row = $start_row + $number_of_rows_to_delete - 1 ;
 
@@ -451,6 +539,12 @@ for my $row (sort keys %moved_cell_list)
 	{
 	for my $cell_address (@{$moved_cell_list{$row}})
 		{
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
+			$self->OffsetDependents($self, $cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+			}
+
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
 			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
@@ -459,14 +553,8 @@ for my $row (sort keys %moved_cell_list)
 				}	
 			else
 				{
-				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999", $self) ;
 				}
-			}
-
-		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
-			{
-			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
-			$self->OffsetDependents($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
 			}
 
 		my $new_address = $self->OffsetAddress($cell_address, 0, - $number_of_rows_to_delete) ;
@@ -487,6 +575,12 @@ for my $row (reverse sort keys %not_moved_cell_list)
 		# compiled. Is there a case where DeleteColumns could be called 
 		# before the formula generation?
 		
+		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
+			{
+			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
+			$self->OffsetDependents($self, $cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+			}
+			
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
 			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
@@ -495,14 +589,8 @@ for my $row (reverse sort keys %not_moved_cell_list)
 				}	
 			else
 				{
-				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
+				$self->OffsetFormula($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999", $self) ;
 				}
-			}
-
-		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
-			{
-			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
-			$self->OffsetDependents($cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
 			}
 		}
 	}

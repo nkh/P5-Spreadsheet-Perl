@@ -17,7 +17,7 @@ our %EXPORT_TAGS =
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 
 our @EXPORT ;
-push @EXPORT, qw( ) ;
+push @EXPORT, qw(DumpSideBySide) ;
 
 our $VERSION = '0.02' ;
 
@@ -213,6 +213,26 @@ return( $dump ) ;
 
 #-------------------------------------------------------------------------------
 
+sub DumpSideBySide
+{
+my (@tables) = @_ ;
+
+use Text::Table ;
+my $table = Text::Table->new() ;
+$table->load
+	(
+	[
+	map
+		{
+		$_->DumpTable(undef, undef, {headingText => $_->GetName()}) ;
+		} @tables
+	]
+	);
+	
+$table ;
+}
+
+#-------------------------------------------------------------------------------
 1 ;
 
 __END__

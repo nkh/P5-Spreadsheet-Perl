@@ -5,6 +5,7 @@ implement a GetAllDependencies that returnd a data structure
 
 insert_rows_columns inter  spreadsheet
 	dependent updating subs to work on inter spreadsheet
+	=> right now the insertion triggers the formulas, that is NOT necessary, deletion should
 
 deletion of cell should update the dependent list in inter spreadsheet
 

@@ -461,10 +461,11 @@ sub OffsetAddress
 {
 # this function accept adresses that are fixed ex: [A1]
 
-my ($self, $address, $column_offset, $row_offset, $range) = @_ ;
+my ($self, $address, $column_offset, $row_offset, $range, $dependency_spreadsheet) = @_ ;
 
 my $range_print = $range || 'none' ;
-#print "OffsetAddress: $address + $column_offset, $row_offset [$range_print] " ; # there is another print closed to the end of this sub you want to uncomment simulteanously
+
+print "OffsetAddress: $address + $column_offset, $row_offset [$range_print] " if($self->{DEBUG}{OFFSET_ADDRESS}) ;
 
 my ($spreadsheet, $is_cell, $start_cell, $end_cell) = ('') ;
 
@@ -472,6 +473,19 @@ if($address =~ /^([A-Z_]+!)(.+)/)
 	{
 	$spreadsheet = $1 ;
 	$address = $2 ;
+	}
+
+if(defined $dependency_spreadsheet)
+	{
+	my $spreadsheet_name  = $spreadsheet eq'' ? $self->GetName() . '!' : $spreadsheet ;
+	
+	print " => s:$spreadsheet_name d:@{[$dependency_spreadsheet->GetName()]}!" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
+	
+	if(($dependency_spreadsheet->GetName() . '!') ne $spreadsheet_name)
+		{
+		print " => different spreadsheets => $spreadsheet$address\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
+		return $spreadsheet . $address ;
+		}
 	}
 
 if($address =~ /(\[?[A-Z@]+\]?\[?[0-9]+\]?):(\[?[A-Z@]+\]?\[?[0-9]+\]?)/)
@@ -548,7 +562,7 @@ else
 		# return undef
 	}
 
-#print " => $offset_address\n" ;
+print " => $offset_address\n" if($self->{DEBUG}{OFFSET_ADDRESS});
 return $offset_address ;
 }
 

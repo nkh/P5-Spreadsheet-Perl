@@ -11,7 +11,8 @@ WriteMakefile(
 	Spreadsheet::ConvertAA => 0.02,
         Data::TreeDumper       => 0.12,
         Data::Table => 1.50,
-	Text::ASCIITable       => 0.12
+	Text::ASCIITable       => 0.12,
+	Text::Table => 0,
 	},
 
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005

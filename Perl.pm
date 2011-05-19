@@ -578,18 +578,24 @@ my ($self, $current_cell, $start_cell) = @_ ;
 
 if(exists $self->{DEPENDENT_STACK} && @{$self->{DEPENDENT_STACK}})
 	{
-	my $dependent = @{$self->{DEPENDENT_STACK}}[-1] ;
-	my ($spreadsheet, $cell_name) = @$dependent ;
-	my $dependent_name = $spreadsheet->GetName() . "!$cell_name" ;
+	my $last_dependent = @{$self->{DEPENDENT_STACK}}[-1] ;
+	
+	# keep our own copy to keep our sanity whenmultiple cells>spreadsheets point 
+	# at the same thing!
+	my $dependent_spreadsheet = $last_dependent->[0] ;
+	my $dependent_cell = $last_dependent->[1] ;
+	
+	my $dependent_name = $dependent_spreadsheet->GetName() . "!$dependent_cell" ;
 	
 	if($self->{DEBUG}{DEPENDENT})
 		{
-		$current_cell->{DEPENDENT}{$dependent_name}{DEPENDENT_DATA} = $dependent ;
+		$current_cell->{DEPENDENT}{$dependent_name}{DEPENDENT_DATA} = 	[$dependent_spreadsheet, $dependent_cell] ;
+
 		$current_cell->{DEPENDENT}{$dependent_name}{COUNT}++ ;
 		}
 	else
 		{
-		$current_cell->{DEPENDENT}{$dependent_name}{DEPENDENT_DATA} = $dependent ;
+		$current_cell->{DEPENDENT}{$dependent_name}{DEPENDENT_DATA} = [$dependent_spreadsheet, $dependent_cell] ;
 		}
 	}
 }
@@ -2453,6 +2459,11 @@ The handle can be used from withing formulas if necessary:
 
 I don't removes the flags I create while developing B<Spreadsheet::Perl> if I think it can be useful to the user (that's me at least).
 The following flags exist:
+
+  # display all the cell offset computation and some header for 
+  # SS::P operations. A heavy weight flag you will hopefully not use
+  $ss->{DEBUG}{OFFSET_ADDRESS}++ ; 
+  
 
   $ss->{DEBUG}{SUB}++ ; # show whenever a value has to be calculated
   $ss->{DEBUG}{FETCHED}++ ; # counts how many times the cell is fetched
