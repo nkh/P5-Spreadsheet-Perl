@@ -331,8 +331,6 @@ return unless exists $self->{CELLS}{$cell_address}{DEPENDENT} ;
 
 my $dependents = $self->{CELLS}{$cell_address}{DEPENDENT} ; 
 
-my @new_dependents ;
-
 for my $dependent_name (keys %{$dependents})
 	{
 	my $dependent = $dependents->{$dependent_name} ;
@@ -341,12 +339,71 @@ for my $dependent_name (keys %{$dependents})
 
 	if($self->is_within_range($cell_name, $range))
 		{
+		print "Deleting dependents $dependent_name at " . $self->GetName() . "!$cell_address\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
+		
 		delete $dependents->{$dependent_name} ;
 		}
 	}
+}
 
-#TODO check other spreadsheet to see if their dependent list points
-#to this spreadsheet
+sub DeleteDependentsInOtherSpreadsheets
+{
+my ($self, $range) = @_ ;
+	
+for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
+	{
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
+			{
+			$other_spreadsheet->DeleteDependents($other_cell, $range, $self) ;
+			}
+		}
+	}
+}
+
+#-------------------------------------------------------------------------------
+
+sub UpdateOtherSpreadsheetAfterDelete
+{
+my ($self, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $deleted_range, $offset_range) = @_ ;
+
+if($self->{DEBUG}{OFFSET_ADDRESS})
+	{
+	print "-------------------------------------------------------------------\n" ;
+	print "Updating other spreadsheets after modification to " . $self->GetName() . "\n" ;
+	print "-------------------------------------------------------------------\n" ;
+	}
+
+$self->DeleteDependentsInOtherSpreadsheets($deleted_range) ;
+
+for my $other_spreadsheet (values  %{$self->{OTHER_SPREADSHEETS}})
+	{
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{DEPENDENT})
+			{
+			$other_spreadsheet->OffsetDependents($self, $other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $offset_range) ;
+			}
+		}
+			
+	for my $other_cell ($other_spreadsheet->GetCellList())
+		{
+		if(exists $other_spreadsheet->{CELLS}{$other_cell}{GENERATED_FORMULA})
+			{
+			if($other_spreadsheet->FormulaReferenceRange($self, $other_cell, $deleted_range)) 
+				{
+				$other_spreadsheet->Set($other_cell, PF("'#REF [d]'")) ;
+				}	
+			else
+				{
+				$other_spreadsheet->OffsetFormula($other_cell, $column_offset, $number_of_columns_to_insert, $row_offset, $number_of_rows_to_insert, $offset_range, $self) ;
+				}
+			}
+		}
+	}
+	
+print "-------------------------------------------------------------------\n\n" if($self->{DEBUG}{OFFSET_ADDRESS}) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -408,14 +465,13 @@ for my $column_index (sort keys %moved_cell_list)
 		{
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
-
+			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999", $self) ;
 			$self->OffsetDependents($self, $cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
 			}
 
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
-			if($self->FormulaReferenceRange($cell_address, "${start_column}1:${end_column}9999")) 
+			if($self->FormulaReferenceRange($self, $cell_address, "${start_column}1:${end_column}9999")) 
 				{
 				$self->Set($cell_address, PF("'#REF [dc]'")) ;
 				}	
@@ -445,13 +501,13 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 		
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999") ;
+			$self->DeleteDependents($cell_address, "${start_column}1:${end_column}9999", $self) ;
 			$self->OffsetDependents($self, $cell_address, $start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:AAAA9999") ;
 			}
 			
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
-			if($self->FormulaReferenceRange($cell_address, "${start_column}1:${end_column}9999")) 
+			if($self->FormulaReferenceRange($self, $cell_address, "${start_column}1:${end_column}9999")) 
 				{
 				$self->Set($cell_address, PF("'#REF [dc]'")) ;
 				}	
@@ -462,6 +518,8 @@ for my $column_index (reverse sort keys %not_moved_cell_list)
 			}
 		}
 	}
+
+$self->UpdateOtherSpreadsheetAfterDelete($start_column, - $number_of_columns_to_delete, 0, 0, "${start_column}1:${end_column}9999", "${start_column}1:AAAA9999") ;
 
 for my $column_header (SortCells grep {!/^@/} $self->GetCellHeaderList())
 	{
@@ -541,13 +599,13 @@ for my $row (sort keys %moved_cell_list)
 		{
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
+			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}", $self) ;
 			$self->OffsetDependents($self, $cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
 			}
 
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
-			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
+			if($self->FormulaReferenceRange($self, $cell_address, "A${start_row}:AAAA${end_row}")) 
 				{
 				$self->Set($cell_address, PF("'#REF [dr]'")) ;
 				}	
@@ -577,13 +635,13 @@ for my $row (reverse sort keys %not_moved_cell_list)
 		
 		if(exists $self->{CELLS}{$cell_address}{DEPENDENT})
 			{
-			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}") ;
+			$self->DeleteDependents($cell_address,  "A${start_row}:AAAA${end_row}", $self) ;
 			$self->OffsetDependents($self, $cell_address, 0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}:AAAA9999") ;
 			}
 			
 		if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			{
-			if($self->FormulaReferenceRange($cell_address, "A${start_row}:AAAA${end_row}")) 
+			if($self->FormulaReferenceRange($self, $cell_address, "A${start_row}:AAAA${end_row}")) 
 				{
 				$self->Set($cell_address, PF("'#REF [dr]'")) ;
 				}	
@@ -594,6 +652,8 @@ for my $row (reverse sort keys %not_moved_cell_list)
 			}
 		}
 	}
+
+$self->UpdateOtherSpreadsheetAfterDelete(0, 0, $start_row, - $number_of_rows_to_delete, "A${start_row}1:AAAA${end_row}", "A${start_row}1:AAAA$9999") ;
 
 for my $row_header (sort grep {/^@/} $self->GetCellHeaderList())
 	{
@@ -620,10 +680,15 @@ for my $row_header (sort grep {/^@/} $self->GetCellHeaderList())
 
 sub FormulaReferenceRange
 {
-my ($self, $cell_address, $range) = @_ ;
+my ($self, $spreadsheet_to_check, $cell_address, $range) = @_ ;
+
+my $reference_range = 0 ;
+my $formula = '' ;
 
 if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 	{
+	my $spreadsheet_to_check_name = $spreadsheet_to_check->GetName() ;
+	
 	my ($rcs, $rrs, $rce, $rre) = $range =~/([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)/ ;
 
 	unless(defined $rcs && defined $rrs && defined $rce && defined $rre)
@@ -654,15 +719,24 @@ if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 		}
 
 
-	my $formula = $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ;
+	$formula = $self->{CELLS}{$cell_address}{GENERATED_FORMULA} ;
 	my ($fcs, $frs, $fce, $fre) ; 
 
-	while($formula =~ /((([A-Z]+)([0-9]+))(:([A-Z]+)([0-9]+))?)/g)
+	while($formula =~ /(([A-Za-z_0-9]+!)?(([A-Z]+)([0-9]+))(:([A-Z]+)([0-9]+))?)/g)
 		{
-		if(defined $5)
+		if(defined $2) # spreadheet name in formula
+			{
+			next unless ($spreadsheet_to_check_name . '!') eq $2 ;
+			}
+		else
+			{
+			next unless $spreadsheet_to_check == $self ;
+			}
+
+		if(defined $6)
 			{
 			# range
-			($fcs, $frs, $fce, $fre) = ($3, $4, $6, $7) ;
+			($fcs, $frs, $fce, $fre) = ($4, $5, $7, $8) ;
 
 			($fcs, $fce) = (FromAA($fcs), FromAA($fce)) ;
 
@@ -689,31 +763,35 @@ if(exists $self->{CELLS}{$cell_address}{GENERATED_FORMULA})
 			}
 		else
 			{
-			($fcs, $frs) = ($3, $4) ;
+			($fcs, $frs) = ($4, $5) ;
 			($fcs) = FromAA($fcs) ;
 
 			($fce, $fre) = ($fcs, $frs) ; 
 			}
-	if
-		(
-		$fcs > $rce
-		|| $fce < $rcs
-		|| $frs > $rre
-		|| $fre < $rrs
-		)
+			
+		if
+			(
+			$fcs > $rce
+			|| $fce < $rcs
+			|| $frs > $rre
+			|| $fre < $rrs
+			)
 			{
-			return 0 ; # does not reference range
+			# does not reference range
 			}
 		else
 			{
-			return 1 ; # references range
+			$reference_range++ ; # references range
+			last ;
 			}
 		}
 	}
-else
-	{
-	return 0 ; # no formula
-	}
+#else
+	# no formula
+	
+#~ print "FormulaReferenceRange: $cell_address, $formula, $range, $reference_range\n" ;
+
+return $reference_range ,
 }
 
 #-------------------------------------------------------------------------------
