@@ -56,7 +56,7 @@ use Prima qw(Application FrameSet Edit ComboBox MsgBox Grids) ;
 use Spreadsheet::Perl ;
 use Spreadsheet::ConvertAA ;
 
-use Spreadsheet::Perl ;
+use Spreadsheet::Perl::Prima::Grid ;
 
 my $ss = tie my %ss, "Spreadsheet::Perl" ;
 
@@ -155,48 +155,9 @@ $ss->{DEBUG}{ERROR_HANDLE} = \*OUT ;
 $grid = $frame->insert_to_frame
 	(
 	1,
-	'AbstractGrid', 
-	 
-	backColor => cl::White,
-	
-	onDrawCell => sub
-			{
-			my
-				(
-				$self, 
-				$canvas, 
-				$col, $row, $xytype,
-				$x1, $y1, $x2, $y2,
-				$X1, $Y1, $X2, $Y2,
-				$xy_sel,
-				$col_row
-				) = @_ ;
-				
-			my %backup = 
-				(
-				  backColor => $self->backColor
-				, color => $self->color
-				) ;
-			
-			my $formula = $ss->GetFormulaText("$col, $row") || '' ;
-			
-			if(defined $formula)
-				{
-				if($xy_sel)
-					{
-					$canvas-> set(backColor => cl::LightBlue, color => cl::White) ;
-					}
-				else
-					{
-					$canvas-> set(backColor => cl::White, color => cl::LightBlue) ;
-					}
-				}
-				       
-			$canvas-> clear($x1, $y1, $x2, $y2) ;
-			$canvas->text_out($self->get_cell_text($col, $row)  , $x1, $y1) ;
-			$canvas-> set(%backup) ;
-			},
-			
+	'Spreadsheet::Perl::Prima::Grid',
+
+	sheet => $ss,
 	onSelectCell => sub
 			{
 			my ($self, $column, $row) = @_ ;
@@ -223,46 +184,8 @@ $grid = $frame->insert_to_frame
 					}
 				}
 			},
-			
-	#~ onKeyDown => sub
-			#~ {
-			#~ my ($self, $key) = @_ ;
-			
-			#~ message_box('OnButtonDown', $key, mb::Ok) ;
-			#~ } ,
-	
-	onMeasure => sub 
-			{
-			my ($self, $axis, $index, $ref) = @_;
-			
-			if(exists $user_breadths[$axis]{$index}) # use exists saves memory
-				{
-				$$ref = $user_breadths[$axis]{$index};
-				}
-			else
-				{
-				$$ref = $axis ? 40 : 80 ;
-				}
-			},
-			
-	onSetExtent => sub 
-			{
-			my ($self, $axis, $index, $breadth) = @_;
-			$user_breadths[$axis]{$index} = $breadth;
-			},
-			
-	onStringify => sub 
-			{
-			my ($self, $col, $row, $ref) = @_ ;
-			
-			my $value = $ss{"$col,$row"} ;
-			
-			$$ref = defined $value ? $value : '' ;
-			},
-	
 	allowChangeCellWidth => 1,
 	allowChangeCellHeight => 1,
-	clipCells => 1,
 	
 	pack => { expand => 1, fill => 'both' },
 	);
@@ -278,9 +201,5 @@ else
 	{
 	$editor->insert_text($ss{'1,1'}) ;
 	}
-
-$grid->columns(100);
-$grid->rows(100);
-$grid->cellIndents(1, 1, 0, 0);
 
 Prima->run() ;

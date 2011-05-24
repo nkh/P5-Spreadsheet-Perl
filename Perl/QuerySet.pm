@@ -178,6 +178,18 @@ return($last_letter, $last_number) ;
 
 #-------------------------------------------------------------------------------
 
+sub GetRange
+{
+my $self = shift ;
+
+my ($last_letter, $last_number) = $self-> GetLastIndexes;
+my ( $index, $order ) = (0, 1);
+$index += $order++ * ( ord($_) - ord('@')) for reverse split '', $last_letter;
+return($index, $last_number) ;
+}
+
+#-------------------------------------------------------------------------------
+
 sub GetCellsToUpdate
 {
 # return the address of all the cells needing an update
