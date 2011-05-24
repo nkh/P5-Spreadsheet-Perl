@@ -207,13 +207,35 @@ if($is_cell)
 			# IE, when data is directly loaded from external file
 			if(exists $current_cell->{PERL_FORMULA} && ! exists $current_cell->{FETCH_SUB})
 				{
-				die "case to be handled!\n" ;
+				my $formula = $current_cell->{PERL_FORMULA} ;
+
+				$current_cell->{NEED_UPDATE} = 1 ;
+				($current_cell->{FETCH_SUB}, $current_cell->{GENERATED_FORMULA}) 
+					= GeneratePerlFormulaSub
+						(
+						$self
+						, $address
+						, $address
+						, $formula->[1]
+						, (@$formula)[2 .. (@$formula - 1)]
+						) ;
 				}
 			else
 				{
 				if(exists $current_cell->{FORMULA} && ! exists $current_cell->{FETCH_SUB})
 					{
-					die "case to be handled!\n" ;
+					my $formula = $current_cell->{FORMULA} ;
+
+					$current_cell->{NEED_UPDATE} = 1 ;
+					($current_cell->{FETCH_SUB}, $current_cell->{GENERATED_FORMULA}) 
+						= GenerateFormulaSub
+							(
+							$self
+							, $address
+							, $address
+							, $formula->[1]
+							, (@$formula)[2 .. (@$formula - 1)]
+							) ;
 					}
 				}
 				

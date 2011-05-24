@@ -13,7 +13,6 @@ my $romeo = tie my %romeo, "Spreadsheet::Perl",
 		A1 => { PERL_FORMULA => [undef, '$ss->Sum("JULIETTE!A1:A2", "A2")']},
 		A2 => { VALUE => 100},
 		A3 => { PERL_FORMULA => [undef, '$ss{A2}']},
-		'B1:B2' => { VALUE => 10},
 		} ;
 
 $romeo->{DEBUG}{INLINE_INFORMATION}++ ;

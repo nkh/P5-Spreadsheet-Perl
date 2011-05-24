@@ -9,7 +9,9 @@ use Spreadsheet::Perl::Arithmetic ;
 $Data::TreeDumper::Displaycallerlocation =  1 ;
 
 my $romeo = tie my %romeo, "Spreadsheet::Perl" , NAME => 'ROMEO' ;
-#~ $romeo->{DEBUG}{OFFSET_ADDRESS}++ ;
+$romeo->{DEBUG}{INSERT_DELETE}++ ;
+$romeo->{DEBUG}{OFFSET_ADDRESS}++ ;
+
 #$romeo->{DEBUG}{FETCH}++ ;
 $romeo->{DEBUG}{INLINE_INFORMATION}++ ;
 $romeo->{DEBUG}{PRINT_DEPENDENT_LIST}++ ;
@@ -24,7 +26,8 @@ $romeo{A2} = 100 ;
 
 
 my $juliette = tie my %juliette, "Spreadsheet::Perl", NAME => 'JULIETTE' ;
-#~ $juliette->{DEBUG}{OFFSET_ADDRESS}++ ;
+$juliette->{DEBUG}{INSERT_DELETE}++ ;
+$juliette->{DEBUG}{OFFSET_ADDRESS}++ ;
 #$juliette->{DEBUG}{FETCH}++ ;
 $juliette->{DEBUG}{INLINE_INFORMATION}++ ;
 $juliette->{DEBUG}{PRINT_DEPENDENT_LIST}++ ;

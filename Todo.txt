@@ -4,10 +4,8 @@ Spreadsheet::Perl
 implement a GetAllDependencies that returnd a data structure
 
 insert_rows_columns inter  spreadsheet
-	dependent updating subs to work on inter spreadsheet
+	#dependent updating subs to work on inter spreadsheet
 	=> right now the insertion triggers the formulas, that is NOT necessary, deletion should
-
-deletion of cell should update the dependent list in inter spreadsheet
 
 insert_rows_columns check formulas to see if they are inlclusive in the
 	insertion range. should they check for intersection as Delete_column does?
@@ -33,12 +31,10 @@ code is not documented making the API difficult to grasp and use
 find a way to move the examples to tests
 
 function to show cell dependencies
-	show the cell	names 
+	show the cell formulas
+	show the cell names 
 
 verification at load time of the formulas could be optional
-
-factorize formula code in STORE/FETCH, is it needed in STORE?
-	=> needed, example in error directory
 
 default file format should be perl, writable too (dump streamer?)
 
@@ -57,15 +53,11 @@ DBI interface
 
 R1C1 reference in formulas => $ss{"+1,-3"}
 
-Sorting (=> formulas !!)
-	option to invalidate all formulas containing a ref to the deleted row ...
-
 Generate graphs, pies, ..
 	generic mechanism to handle output fron cell that is not text
 
 Composite initialisation type? Composite(PerlFormula(), 7, Format(), ....) ;
 	Clear(FORMULA, VALUE, FORMAT, ALL) ;
-
 
 perl debugger support/triggers
 
