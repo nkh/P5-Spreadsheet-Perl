@@ -6,6 +6,7 @@ README
 test.pl
 Todo.txt
 
+Perl/Heavy/Tie.pm
 Perl/Heavy/Fetch.pm
 Perl/Heavy/Store.pm
 Perl/Heavy/Dependent.pm

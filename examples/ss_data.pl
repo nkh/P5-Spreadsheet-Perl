@@ -51,12 +51,6 @@ DEBUG =>
 	
 ERROR_HANDLER => undef, 
 
-MESSAGE =>
-	{
-	ERROR => '#error',
-	NEED_UPDATE => '#need update'
-	},
-	
 NAME => 'Yasmin',
 
 NAMED_ADDRESSES =>

@@ -13,6 +13,7 @@ insert_rows_columns check formulas to see if they are inlclusive in the
 subs checking if a cell or range is contained or intersect with another range MUST first Canonize the range so named ranges work too
 
 Named cells in insertion/deletion
+	NAMED ranges must be offset or made invalid
 
 tests for col/row insertion/deletion as well as dependency and dependent list
 
