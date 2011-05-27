@@ -19,7 +19,7 @@ our %EXPORT_TAGS =
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } ) ;
 
 our @EXPORT ;
-push @EXPORT, qw( Reset ) ;
+push @EXPORT, qw() ;
 
 our $VERSION = '0.14' ;
 

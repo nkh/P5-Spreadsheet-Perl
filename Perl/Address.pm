@@ -27,10 +27,38 @@ use Spreadsheet::ConvertAA 0.02 ;
 
 #-------------------------------------------------------------------------------
 
+=head1 NAME
+
+ Spreadsheet:Perl::Address - Spreadsheet address manipulation routines
+
+=head1 SUBROUTINES/METHODS
+
+Subroutines that are not part of the public interface are marked with [p].
+
+=cut
+
+#-------------------------------------------------------------------------------
+
 sub IsAddress
 {
-my $self = shift ;
-my $address = shift ;
+
+=head2 IsAddress($self, $address)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=back
+
+I<Returns> - Boolean
+
+=cut
+
+my ($self, $address) = @_ ;
 
 eval
 	{
@@ -44,8 +72,44 @@ $@ ? return(0) : return(1) ;
 
 sub CanonizeAddress
 {
-# transform numeric cell index to alphabetic index
-# transform symbolic addresses to alphabetic index
+
+=head2 CanonizeAddress($self, $address)
+
+Transform numeric cell index to alphabetic index and transform symbolic addresses to alphabetic index
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=back
+
+I<Returns> 
+
+=over 2
+
+=item * in scalar context: String - the Canonized cell or range
+
+=item * in list context:
+
+=over 2
+
+=item * String - the canonized cell or range
+
+=item * Boolean - set if address is a cell
+
+=item * String - canonized start cell or range
+
+=item * String - canonized end cell or range
+
+=back
+
+=back
+
+=cut
 
 my $self = shift ;
 my $address = uc(shift) ;
@@ -130,8 +194,26 @@ else
 
 sub CanonizeCellAddress
 {
-my $self = shift ;
-my $address = shift ;
+
+=head2 [p] CanonizeCellAddress($self, $address)
+
+helper sub to  L<CanonizeAddress>.
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=back
+
+I<Returns> - Canonized cell address
+
+=cut
+
+my ($self, $address) = @_ ;
 
 my $spreadsheet = '' ;
 
@@ -171,7 +253,24 @@ else
 
 sub SortCells
 {
-# returns the addresses, passed as argument, sorted.
+
+=head2 SortCells(@addresses)
+
+Sorts addresses
+
+I<Arguments>
+
+=over 2
+
+
+=item * @addresses - list of cell addresses to be sorted
+
+=back
+
+I<Returns> - the addresses, passed as argument, sorted.
+
+=cut
+
 return
 	(
 	sort
@@ -193,8 +292,28 @@ return
 
 sub SetNames
 {
-my $self = shift ;
-my %name_address = @_ ;
+
+=head2 SetNames($self, %name_address)
+
+Associates a name with cell address or a cell range. Multiple name => address can be passed as
+arguments.
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * %name_address - a list of name => cell address or cell address range
+
+=back
+
+I<Returns> - Nothing
+
+=cut
+
+
+my ($self, %name_address) = @_ ;
 
 while (my($name, $address) = each %name_address)
 	{
@@ -211,12 +330,32 @@ while (my($name, $address) = each %name_address)
 
 	$self->{NAMED_ADDRESSES}{$name} = $self->CanonizeAddress($address) ;
 	}
+
+return ;
 }
 
 #-------------------------------------------------------------------------------
 
 sub CanonizeName
 {
+
+=head2 [p] CanonizeName($self, $name)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $name - 
+
+=back
+
+I<Returns> - Nothing
+
+=cut
+
+
 my $self = shift ;
 my $name = uc(shift) ;
 
@@ -227,6 +366,33 @@ return $self->{NAMED_ADDRESSES}{$name} ;
 
 sub ConvertAdressToNumeric
 {
+
+=head2 ConvertAddressToNumeric($self, $address)
+
+Convert single cell address to a number tuple
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=back
+
+I<Returns> Nothing on error (callls confess) or a list containing
+
+=over 2
+
+=item * column_index
+
+=item * row_index
+
+=back
+
+=cut
+
 my $address = shift ;
 
 my $spreadsheet = '' ;
@@ -250,6 +416,7 @@ if($address =~ /^([A-Z@]+)([0-9]+)$/)
 else
 	{
 	confess "Invalid Address '$address'." ;
+	return ;
 	}
 }
 
@@ -257,11 +424,30 @@ else
 
 sub ConvertNumericToAddress
 {
+
+=head2 ConvertNumericToAddress($self, $column_index, $row_index)
+
+Converts $column_index, $row_index to a cell addresss
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $column_index
+
+=item * $row_index
+
+=back
+
+I<Returns> - Nothing
+
+=cut
+
 my ($x, $y) = @_ ;
 
 my $converted_figures = ToAA($x) ;
-
-#~ print "ConvertNumericToAddress: $x,$y => $converted_figures$y\n" ;
 
 return("$converted_figures$y") ;
 }
@@ -270,6 +456,23 @@ return("$converted_figures$y") ;
 
 sub GetAddressList
 {
+
+=head2  GetAddressList($self, $address)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=back
+
+I<Returns> - A list containing all the addresses in within $address
+
+=cut
+
 my $self = shift ;
 my @addresses_definition = @_;
 my @addresses ;
@@ -381,6 +584,31 @@ return(@addresses) ;
 
 sub GetSpreadsheetReference
 {
+
+=head2 GetSpreadsheetReference($self, $address)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=back
+
+I<Returns> A list containing 
+
+=over 2
+
+=item * a spreadsheet object reference - self, a foreign spreadsheet or undef
+
+=item * address - cell address or cell address range with spreadsheet name removed
+
+=back
+
+=cut
+
 my $self = shift ;
 my $address = shift ; #! must be canonized
 
@@ -414,6 +642,25 @@ else
 
 sub is_within_range
 {
+
+=head2 is_within_range($self, $cell_address, $range)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $cell_address - cell address 
+
+=item * $range - address range
+
+=back
+
+I<Returns> - Boolean - 1 if cell is within range
+
+=cut
+
 my ($self, $cell_address, $range) = @_ ;
 
 my ($range_canonized, $is_cell, $range_start_cell, $range_end_cell)
@@ -459,7 +706,35 @@ else
 
 sub OffsetAddress
 {
-# this function accept adresses that are fixed ex: [A1]
+
+=head2  OffsetAddress($self, $address)
+
+This function accept adresses that are fixed ex: [A1]
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address or cell address range
+
+=item * $column_offset - Integer - offset to be applied to the column element
+
+=item * $row_offset - Integer - offset to be applied to the row element
+
+=item * $range - cell range - $address must be within range for offset to be applied
+
+=item * $dependency_spreadsheet - blessed Spreadsheet::Perl object - $address must reference the spreadsheet for offset to be applied
+
+If $dependency_spreadsheet is not defined, offset is applied to $address if the address does not reference a spreadsheet
+
+=back
+
+I<Returns> - the offset address
+
+=cut
+
 
 my ($self, $address, $column_offset, $row_offset, $range, $dependency_spreadsheet) = @_ ;
 
@@ -570,10 +845,29 @@ return $offset_address ;
 
 sub OffsetCellAddress
 {
-my $self = shift ;
-my $cell_address = shift ;
-my $column_offset = shift ;
-my $row_offset = shift ;
+
+=head2 OffsetCellAddress($self, $address)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address - cell address
+
+=item * $column_offset - Integer - offset to be applied to the column element
+
+=item * $row_offset - Integer - offset to be applied to the row element
+
+=back
+
+I<Returns> - the offset cell
+
+=cut
+
+
+my ($self, $cell_address, $column_offset, $row_offset) = @_ ;
 
 my $spreadsheet = '' ;
 if($cell_address=~ /^([A-Z_]+!)(.+)/)
@@ -604,6 +898,33 @@ else
 
 sub GetCellsOffset
 {
+
+=head2 GetCellOffset($self, $address_1, $address_2)
+
+I<Arguments>
+
+=over 2
+
+=item * $self - blessed Spreadsheet::Perl object
+
+=item * $address_1 - cell address
+
+=item * $address_2 - cell address
+
+=back
+
+I<Returns> - list containing
+
+=over 2
+
+=item * column_offset - Integer
+
+=item * row_offset - Integer
+
+=back
+
+=cut
+
 my $self = shift ;
 my $cell_address1 = $self->CanonizeAddress(shift) ;
 my $cell_address2 = $self->CanonizeAddress(shift) ;
@@ -659,7 +980,7 @@ Part of Spreadsheet::Perl.
 
 Khemir Nadim ibn Hamouda. <nadim@khemir.net>
 
-  Copyright (c) 2004 Nadim Ibn Hamouda el Khemir. All rights
+  Copyright (c) 2004, 2011 Nadim Ibn Hamouda el Khemir. All rights
   reserved.  This program is free software; you can redis-
   tribute it and/or modify it under the same terms as Perl
   itself.
